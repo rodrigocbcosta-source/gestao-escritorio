@@ -1,0 +1,2693 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Gestão Escritório</title>
+<link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'><rect width='64' height='64' rx='12' fill='%230071e3'/><rect x='10' y='8' width='32' height='12' rx='4' fill='%230071e3'/><rect x='6' y='16' width='52' height='38' rx='5' fill='%230060c7'/><rect x='8' y='18' width='48' height='34' rx='4' fill='white' opacity='0.12'/><text x='32' y='44' font-family='system-ui' font-size='26' font-weight='500' fill='white' text-anchor='middle'>R</text></svg>">
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:system-ui,-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:#f5f5f7;color:#1d1d1f;font-size:14px;min-height:100vh}
+#topbar{position:sticky;top:0;z-index:100;background:rgba(255,255,255,0.94);backdrop-filter:blur(14px);border-bottom:0.5px solid #e5e5ea;display:flex;align-items:center;padding:0 20px;height:52px;gap:10px}
+#topbar h1{font-size:15px;font-weight:700;color:#1d1d1f;flex:1;white-space:nowrap}
+#status-indicator{font-size:11px;padding:3px 10px;border-radius:20px;background:#f0f0f5;color:#666;white-space:nowrap}
+#status-indicator.ok{background:#e8f5e9;color:#2e7d32}
+#status-indicator.saving{background:#fff8e1;color:#f57f17}
+#status-indicator.offline{background:#fce4ec;color:#c62828}
+.btn-header{font-size:12px;padding:5px 12px;border-radius:8px;border:0.5px solid #d1d1d6;background:#fff;cursor:pointer;color:#1d1d1f;white-space:nowrap;transition:background .15s}
+.btn-header:hover{background:#f5f5f7}
+#tabs{background:rgba(255,255,255,0.94);backdrop-filter:blur(14px);border-bottom:0.5px solid #e5e5ea;display:flex;padding:0 16px;overflow-x:auto;gap:2px;position:sticky;top:52px;z-index:99;scrollbar-width:none}
+#tabs::-webkit-scrollbar{display:none}
+.tab{padding:10px 15px;cursor:pointer;font-size:13px;font-weight:500;color:#6e6e73;border-bottom:2px solid transparent;white-space:nowrap;transition:color .15s}
+.tab:hover{color:#1d1d1f}
+.tab.active{color:#0071e3;border-bottom-color:#0071e3}
+#main{padding:20px;max-width:1200px;margin:0 auto}
+.section{display:none}.section.active{display:block}
+.card{background:#fff;border-radius:14px;border:0.5px solid #e5e5ea;box-shadow:0 1px 3px rgba(0,0,0,0.06);padding:18px;margin-bottom:14px}
+.card-title{font-size:13px;font-weight:600;color:#1d1d1f;margin-bottom:14px;display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.stats-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px;margin-bottom:16px}
+.stat-card{background:#fff;border-radius:14px;border:0.5px solid #e5e5ea;box-shadow:0 1px 3px rgba(0,0,0,0.06);padding:14px 16px;cursor:pointer;transition:background .15s}
+.stat-card:hover{background:#f0f7ff}
+.stat-card.s-green:hover{background:#e8f5e9}
+.stat-card.s-amber:hover{background:#fffde7}
+.stat-card.s-red:hover{background:#fce4ec}
+.stat-card.s-purple:hover{background:#f3e5f5}
+.stat-num{font-size:26px;font-weight:700;color:#1d1d1f;line-height:1}
+.stat-label{font-size:11px;color:#6e6e73;margin-top:4px}
+.tag{display:inline-block;font-size:11px;font-weight:500;padding:2px 8px;border-radius:20px;white-space:nowrap}
+.tag-green{background:#e8f5e9;color:#2e7d32}
+.tag-blue{background:#e3f2fd;color:#1565c0}
+.tag-amber{background:#fff8e1;color:#f57f17}
+.tag-red{background:#fce4ec;color:#c62828}
+.tag-gray{background:#f5f5f5;color:#757575}
+.tag-purple{background:#f3e5f5;color:#6a1b9a}
+.check-verde{color:#2e7d32;font-weight:600}
+.prio-vermelho::before{content:'🔴 '}
+.prio-amarelo::before{content:'🟡 '}
+.prio-verde::before{content:'🟢 '}
+.escritorio-block{margin-bottom:20px}
+.escritorio-header{display:flex;align-items:center;gap:10px;padding:10px 16px;border-radius:12px;cursor:pointer;margin-bottom:8px;transition:opacity .15s;user-select:none}
+.escritorio-header:hover{opacity:.85}
+.escritorio-header h2{font-size:14px;font-weight:700;color:#fff;flex:1}
+.escritorio-header .chevron{color:rgba(255,255,255,0.8);font-size:12px;transition:transform .2s}
+.escritorio-header .chevron.open{transform:rotate(90deg)}
+.escritorio-body{display:none}.escritorio-body.open{display:block}
+.cor-principal{background:linear-gradient(135deg,#1a56db,#3b82f6)}
+.cor-pai{background:linear-gradient(135deg,#0e7490,#06b6d4)}
+.cor-mariana{background:linear-gradient(135deg,#7c3aed,#a78bfa)}
+.cor-jessica{background:linear-gradient(135deg,#be185d,#f472b6)}
+.cor-dativa{background:linear-gradient(135deg,#b45309,#f59e0b)}
+.cor-andre{background:linear-gradient(135deg,#0f766e,#14b8a6)}
+.cor-felipe{background:linear-gradient(135deg,#7e22ce,#a855f7)}
+.cor-mara{background:linear-gradient(135deg,#065f46,#34d399)}
+.sec-label{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;color:#6e6e73;margin:12px 0 6px;padding-left:2px}
+.tbl-wrap{overflow-x:auto;border-radius:10px;border:0.5px solid #e5e5ea}
+table{width:100%;border-collapse:collapse;min-width:500px}
+th{font-size:11px;font-weight:600;color:#6e6e73;text-transform:uppercase;letter-spacing:.3px;padding:8px 10px;text-align:left;background:#fafafa;border-bottom:0.5px solid #e5e5ea;white-space:nowrap}
+td{padding:9px 10px;border-bottom:0.5px solid #f2f2f7;font-size:13px;vertical-align:top}
+tr:last-child td{border-bottom:none}
+tr:hover td{background:#fafafe}
+.action-btns{display:flex;gap:5px;flex-wrap:wrap}
+.num-processo{font-family:system-ui,-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;font-size:11px;color:#0071e3;white-space:nowrap;cursor:pointer;border-bottom:1px dashed #a0c4ff;transition:color .15s}
+.num-processo:hover{color:#004fa3}
+#painel-processo{position:fixed;top:0;right:-420px;width:400px;height:100vh;background:#fff;box-shadow:-4px 0 24px rgba(0,0,0,0.10);z-index:500;transition:right .28s cubic-bezier(.4,0,.2,1);display:flex;flex-direction:column;border-left:0.5px solid #e5e5ea}
+#painel-processo.open{right:0}
+#painel-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,0.18);z-index:499}
+#painel-overlay.open{display:block}
+#painel-header{padding:18px 20px 14px;border-bottom:0.5px solid #e5e5ea;display:flex;align-items:flex-start;gap:10px}
+#painel-header h3{font-size:14px;font-weight:600;color:#1d1d1f;flex:1;line-height:1.4;word-break:break-all}
+#painel-close{background:none;border:none;cursor:pointer;font-size:18px;color:#6e6e73;padding:0;line-height:1;flex-shrink:0}
+#painel-body{flex:1;overflow-y:auto;padding:16px 20px}
+#painel-footer{padding:14px 20px;border-top:0.5px solid #e5e5ea;display:flex;gap:8px}
+.form-row{display:flex;gap:10px;flex-wrap:wrap;margin-bottom:10px}
+.form-group{display:flex;flex-direction:column;gap:4px;flex:1;min-width:130px}
+.form-group label{font-size:11px;font-weight:600;color:#6e6e73;text-transform:uppercase;letter-spacing:.3px}
+input[type=text],select,textarea{width:100%;padding:7px 10px;border-radius:8px;border:0.5px solid #d1d1d6;font-size:13px;font-family:inherit;background:#fff;color:#1d1d1f;outline:none;transition:border .15s}
+input:focus,select:focus,textarea:focus{border-color:#0071e3;box-shadow:0 0 0 2px rgba(0,113,227,.1)}
+textarea{resize:vertical;min-height:65px}
+select{cursor:pointer}
+.btn{padding:7px 16px;border-radius:8px;border:none;font-size:13px;font-weight:500;cursor:pointer;transition:all .15s;font-family:inherit}
+.btn:hover{opacity:.82}
+.btn-blue{background:#0071e3;color:#fff}
+.btn-green{background:#34c759;color:#fff}
+.btn-red{background:#fff;color:#ff3b30;border:0.5px solid #d1d1d6}
+.btn-red:hover{background:#fff0f0;border-color:#ff3b30}
+.btn-gray{background:#fff;color:#1d1d1f;border:0.5px solid #d1d1d6}
+.btn-gray:hover{background:#f5f5f7}
+.btn-amber{background:#fff;color:#b45309;border:0.5px solid #d1d1d6}
+.btn-amber:hover{background:#fffbeb;border-color:#f59e0b}
+.btn-sm{padding:4px 9px;font-size:11px}
+.btn-icon{width:28px;height:28px;padding:0;border-radius:7px;border:0.5px solid #e5e5ea;background:#fafafa;cursor:pointer;display:inline-flex;align-items:center;justify-content:center;transition:all .12s ease;position:relative;color:#6e6e73}
+.btn-icon:hover{border-color:#0071e3;background:#fff;color:#0071e3;box-shadow:0 1px 4px rgba(0,113,227,.15)}
+.btn-icon.danger{color:#6e6e73}
+.btn-icon.danger:hover{border-color:#ff3b30;background:#fff;color:#ff3b30;box-shadow:0 1px 4px rgba(255,59,48,.15)}
+.btn-icon.warn{color:#6e6e73}
+.btn-icon.warn:hover{border-color:#f59e0b;background:#fff;color:#b45309;box-shadow:0 1px 4px rgba(245,158,11,.15)}
+.btn-icon svg{width:13px;height:13px;pointer-events:none}
+.btn-icon::after{content:attr(data-tip);position:absolute;bottom:calc(100% + 6px);left:50%;transform:translateX(-50%);background:#1d1d1f;color:#fff;font-size:11px;font-weight:500;padding:4px 8px;border-radius:6px;white-space:nowrap;opacity:0;pointer-events:none;transition:opacity .15s;z-index:400;letter-spacing:.1px}
+.btn-icon:hover::after{opacity:1}
+.modal-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,0.32);z-index:200;align-items:center;justify-content:center;padding:16px}
+.modal-overlay.open{display:flex}
+.modal{background:#fff;border-radius:18px;padding:24px;width:100%;max-width:580px;max-height:92vh;overflow-y:auto;box-shadow:0 20px 60px rgba(0,0,0,0.15)}
+.modal h2{font-size:16px;font-weight:700;margin-bottom:18px;display:flex;align-items:center;gap:8px}
+.modal-footer{display:flex;gap:8px;justify-content:flex-end;margin-top:18px;padding-top:14px;border-top:0.5px solid #e5e5ea}
+.alert-fatal{background:#fce4ec;border:0.5px solid #f48fb1;border-radius:10px;padding:10px 14px;color:#c62828;font-size:13px;margin-bottom:8px;display:flex;align-items:center;gap:8px}
+.alert-amber{background:#fff8e1;border:0.5px solid #fde68a;border-radius:10px;padding:10px 14px;color:#92400e;font-size:13px;margin-bottom:8px;display:flex;align-items:center;gap:8px}
+.feed-area{background:#f5f5f7;border-radius:10px;padding:12px;margin-top:8px}
+.feed-input-area{display:flex;flex-direction:column;gap:6px;margin-bottom:10px}
+.char-counter{font-size:11px;color:#6e6e73;text-align:right}
+.feed-item{background:#fff;border-radius:8px;padding:10px 12px;margin-bottom:7px;border:0.5px solid #e5e5ea;font-size:13px}
+.feed-item-header{display:flex;justify-content:space-between;align-items:flex-start;gap:8px;margin-bottom:4px}
+.feed-ts{font-size:11px;color:#6e6e73}
+.cal-wrapper{position:relative;display:inline-block;width:100%}
+th.sortable{cursor:pointer;user-select:none;white-space:nowrap}
+th.sortable:hover{background:#f0f4ff}
+th.sortable.asc::after{content:" ↑";font-size:10px;color:#0071e3}
+th.sortable.desc::after{content:" ↓";font-size:10px;color:#0071e3}
+.cal-popup{display:none;position:absolute;top:calc(100% + 4px);left:0;z-index:300;background:#fff;border-radius:12px;border:0.5px solid #e5e5ea;box-shadow:0 8px 30px rgba(0,0,0,0.12);padding:12px;width:272px;min-width:272px}
+.cal-popup.open{display:block}
+.cal-nav{display:flex;align-items:center;justify-content:space-between;margin-bottom:8px}
+.cal-nav span{font-size:13px;font-weight:600}
+.cal-nav button{background:none;border:none;cursor:pointer;font-size:14px;padding:2px 6px;color:#0071e3;border-radius:4px}
+.cal-nav button:hover{background:#e3f2fd}
+.cal-grid{display:grid;grid-template-columns:repeat(7,34px);gap:2px}
+.cal-day-name{font-size:10px;font-weight:600;color:#6e6e73;text-align:center;padding:2px 0;width:34px}
+.cal-day{font-size:12px;text-align:center;padding:5px 0;border-radius:6px;cursor:pointer;width:34px;height:28px;line-height:18px;box-sizing:border-box}
+.cal-day:hover{background:#e3f2fd}
+.cal-day.today{background:#dbeafe;color:#1565c0;font-weight:600}
+.cal-day.selected{background:#0071e3!important;color:#fff!important}
+.cal-day.empty{pointer-events:none}
+.hist-timeline{list-style:none}
+.hist-timeline li{display:flex;gap:10px;padding:8px 0;border-bottom:0.5px solid #f2f2f7;font-size:13px}
+.hist-timeline li:last-child{border-bottom:none}
+.hist-dot{width:8px;height:8px;border-radius:50%;background:#0071e3;margin-top:4px;flex-shrink:0}
+.arquivo-card{background:#fffbeb;border:0.5px solid #fde68a;border-radius:12px;padding:14px;margin-bottom:8px}
+.search-bar{position:relative;margin-bottom:12px}
+.search-bar input{padding-left:32px}
+.search-icon{position:absolute;left:10px;top:50%;transform:translateY(-50%);font-size:12px;pointer-events:none}
+.pills{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:12px}
+.pill{padding:4px 12px;border-radius:20px;font-size:12px;font-weight:500;border:0.5px solid #d1d1d6;background:#fff;cursor:pointer;transition:all .15s}
+.pill:hover{background:#f0f7ff;border-color:#0071e3;color:#0071e3}
+.pill.active{background:#0071e3;border-color:#0071e3;color:#fff}
+.empty-state{text-align:center;padding:30px 20px;color:#6e6e73;font-size:13px}
+.empty-state .emoji{font-size:30px;margin-bottom:6px}
+.vc-escritorio{margin-bottom:24px}
+.vc-escritorio-title{font-size:15px;font-weight:700;padding:10px 14px;border-radius:10px;color:#fff;margin-bottom:10px}
+.vc-sec-title{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;color:#6e6e73;margin:10px 0 5px}
+@media(max-width:640px){
+  .stats-grid{grid-template-columns:repeat(2,1fr)}
+  .form-row{flex-direction:column}
+  #topbar h1{font-size:13px}
+  .modal{padding:18px}
+}
+</style>
+</head>
+<body>
+
+<!-- TOPBAR -->
+<div id="topbar">
+  <h1>⚖️ Gestão Escritório</h1>
+  <span id="status-indicator" class="offline">Offline</span>
+  <button id="btn-sync-pending" class="btn-header" style="display:none;background:#fff3cd;color:#856404;border:1px solid #ffc107" onclick="abrirModalOffline()" title="Há dados locais não enviados ao Sheets. Clique para resolver.">⚠ Dados não sincronizados</button>
+  <button class="btn-header" onclick="exportBackup()">⬇ Backup</button>
+  <button class="btn-header" onclick="document.getElementById('import-backup-input').click()">⬆ Restaurar</button>
+  <input type="file" id="import-backup-input" accept=".txt,.json" style="display:none" onchange="importarBackup(this)">
+  <button class="btn-header" onclick="openGsConfig()">⚙ Sheets</button>
+</div>
+
+<!-- TABS -->
+<div id="tabs">
+  <div class="tab active" data-tab="dashboard" onclick="showTab('dashboard')">Dashboard</div>
+  <div class="tab" data-tab="tarefas" onclick="showTab('tarefas')">Tarefas</div>
+  <div class="tab" data-tab="audiencias" onclick="showTab('audiencias')">Audiências / Atos</div>
+  <div class="tab" data-tab="processos" onclick="showTab('processos')">Processos</div>
+  <div class="tab" data-tab="delegacoes" onclick="showTab('delegacoes')">Delegações Mara</div>
+  <div class="tab" data-tab="oab" onclick="showTab('oab')">OAB</div>
+  <div class="tab" data-tab="arquivo" onclick="showTab('arquivo')">Arquivo</div>
+  <div class="tab" data-tab="lixeira" onclick="showTab('lixeira')" id="tab-lixeira">Lixeira</div>
+</div>
+
+<!-- MAIN -->
+<div id="main">
+
+  <!-- ===== DASHBOARD ===== -->
+  <div id="sec-dashboard" class="section active">
+    <div id="alertas-container"></div>
+    <div class="card" id="card-lembretes">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px">
+        <div style="display:flex;align-items:center;gap:8px;font-size:14px;font-weight:600">💬 Comentários</div>
+        <button onclick="toggleLembretesCollapse()" id="btn-collapse-lembretes" style="background:#fff;border:0.5px solid #e5e5ea;border-radius:8px;width:32px;height:32px;cursor:pointer;font-size:14px;display:flex;align-items:center;justify-content:center">▲</button>
+      </div>
+      <div id="lembretes-body">
+        <div style="margin-bottom:16px">
+          <div style="display:flex;justify-content:flex-end;margin-bottom:4px">
+            <span style="font-size:11px;color:#6e6e73" id="lembretes-counter">2000 caracteres restantes</span>
+          </div>
+          <textarea id="lembretes-textarea" rows="3" maxlength="2000" placeholder="Escreva um lembrete ou informação importante..." style="width:100%;border-radius:8px;border:0.5px solid #d1d1d6;padding:10px;font-size:13px;font-family:inherit;resize:vertical;outline:none"></textarea>
+          <div style="margin-top:8px">
+            <button class="btn btn-blue btn-sm" onclick="addComentario()" style="padding:7px 20px;font-size:13px">Comentar</button>
+          </div>
+        </div>
+        <div id="comentarios-lista"></div>
+      </div>
+    </div>
+    <div class="stats-grid" id="stat-cards"></div>
+    <div class="card">
+      <div class="card-title">📅 Audiências / Atos — Próximas e Recentes</div>
+      <div id="dash-proximas"></div>
+    </div>
+    <div class="card">
+      <div class="card-title">🔥 Tarefas & Demandas — Alta Prioridade</div>
+      <div id="dash-urgentes"></div>
+    </div>
+    <div class="card">
+      <div class="card-title">🔄 Delegações Mara — Pendentes</div>
+      <div id="dash-delegacoes"></div>
+    </div>
+  </div>
+
+  <!-- ===== TAREFAS ===== -->
+  <div id="sec-tarefas" class="section">
+    <div class="card">
+      <div class="card-title">
+        📋 Tarefas
+        <button class="btn btn-blue btn-sm" onclick="openModalItem('tarefa')" style="margin-left:auto">+ Nova Tarefa</button>
+      </div>
+      <div class="pills" id="pills-tarefas">
+        <div class="pill active" onclick="setPill('tarefas','todos',this)">Todos</div>
+        <div class="pill" onclick="setPill('tarefas','principal',this)">Principal</div>
+        <div class="pill" onclick="setPill('tarefas','pai',this)">Pai</div>
+        <div class="pill" onclick="setPill('tarefas','mariana',this)">Mariana</div>
+        <div class="pill" onclick="setPill('tarefas','jessica',this)">Jéssica</div>
+        <div class="pill" onclick="setPill('tarefas','dativa',this)">Dativos</div>
+        <div class="pill" onclick="setPill('tarefas','andre',this)">André</div>
+        <div class="pill" onclick="setPill('tarefas','felipe',this)">Felipe</div>
+      </div>
+      <div class="search-bar"><span class="search-icon">🔍</span><input type="text" id="busca-tarefas" placeholder="Buscar..." oninput="renderTarefas()"></div>
+      <div id="lista-tarefas"></div>
+    </div>
+  </div>
+
+  <!-- ===== AUDIÊNCIAS ===== -->
+  <div id="sec-audiencias" class="section">
+    <div class="card">
+      <div class="card-title">
+        🏛 Audiências / Atos Designados
+        <button class="btn btn-blue btn-sm" onclick="openModalItem('audiencia')" style="margin-left:auto">+ Nova</button>
+      </div>
+      <div class="pills" id="pills-audiencias">
+        <div class="pill active" onclick="setPill('audiencias','todos',this)">Todos</div>
+        <div class="pill" onclick="setPill('audiencias','principal',this)">Principal</div>
+        <div class="pill" onclick="setPill('audiencias','pai',this)">Pai</div>
+        <div class="pill" onclick="setPill('audiencias','mariana',this)">Mariana</div>
+        <div class="pill" onclick="setPill('audiencias','jessica',this)">Jéssica</div>
+        <div class="pill" onclick="setPill('audiencias','dativa',this)">Dativos</div>
+        <div class="pill" onclick="setPill('audiencias','andre',this)">André</div>
+        <div class="pill" onclick="setPill('audiencias','felipe',this)">Felipe</div>
+      </div>
+      <div class="search-bar"><span class="search-icon">🔍</span><input type="text" id="busca-audiencias" placeholder="Buscar..." oninput="renderAudiencias()"></div>
+      <div id="lista-audiencias"></div>
+    </div>
+  </div>
+
+  <!-- ===== PROCESSOS ===== -->
+  <div id="sec-processos" class="section">
+    <div class="card">
+      <div class="card-title">
+        📁 Processos em Andamento
+        <button class="btn btn-blue btn-sm" onclick="openModalItem('processo')" style="margin-left:auto">+ Novo Processo</button>
+      </div>
+      <div id="processos-contadores" style="display:flex;flex-wrap:wrap;gap:8px;margin-bottom:14px"></div>
+      <div class="pills" id="pills-processos">
+        <div class="pill active" onclick="setPill('processos','todos',this)">Todos</div>
+        <div class="pill" onclick="setPill('processos','principal',this)">Principal</div>
+        <div class="pill" onclick="setPill('processos','pai',this)">Pai</div>
+        <div class="pill" onclick="setPill('processos','mariana',this)">Mariana</div>
+        <div class="pill" onclick="setPill('processos','jessica',this)">Jéssica</div>
+        <div class="pill" onclick="setPill('processos','dativa',this)">Dativos</div>
+        <div class="pill" onclick="setPill('processos','andre',this)">André</div>
+        <div class="pill" onclick="setPill('processos','felipe',this)">Felipe</div>
+      </div>
+      <div class="search-bar"><span class="search-icon">🔍</span><input type="text" id="busca-processos" placeholder="Buscar cliente, processo, assunto..." oninput="renderProcessos()"></div>
+      <div id="lista-processos"></div>
+    </div>
+  </div>
+
+  <!-- ===== DELEGAÇÕES MARA ===== -->
+  <div id="sec-delegacoes" class="section">
+    <div class="card">
+      <div class="card-title">
+        🤝 Delegações — Mara
+        <button class="btn btn-blue btn-sm" onclick="openModalItem('delegacao')" style="margin-left:auto">+ Nova Delegação</button>
+      </div>
+      <div id="lista-delegacoes"></div>
+    </div>
+  </div>
+
+  <!-- ===== OAB ===== -->
+  <div id="sec-oab" class="section">
+
+    <!-- COMISSÃO DE LICITAÇÕES -->
+    <div class="escritorio-block">
+      <div class="escritorio-header" style="background:linear-gradient(135deg,#b45309,#f59e0b)" onclick="toggleOabDiv('licitacoes')">
+        <h2>⚖️ Comissão de Licitações</h2>
+        <span class="chevron open" id="chev-oab-licitacoes">▶</span>
+      </div>
+      <div class="escritorio-body open" id="body-oab-licitacoes">
+        <div style="display:flex;gap:8px;margin-bottom:14px;flex-wrap:wrap">
+          <button class="btn btn-blue btn-sm" onclick="openModalOAB('licitacoes','tarefa')">+ Nova Tarefa</button>
+          <button class="btn btn-sm" style="background:#fff8e1;color:#b45309;border:0.5px solid #fde68a" onclick="openModalOAB('licitacoes','evento')">+ Novo Evento / Reunião</button>
+        </div>
+        <div id="oab-licitacoes-content"></div>
+      </div>
+    </div>
+
+    <!-- OAB VAI À ESCOLA -->
+    <div class="escritorio-block">
+      <div class="escritorio-header" style="background:linear-gradient(135deg,#0f766e,#14b8a6)" onclick="toggleOabDiv('escola')">
+        <h2>🏫 OAB vai à Escola</h2>
+        <span class="chevron open" id="chev-oab-escola">▶</span>
+      </div>
+      <div class="escritorio-body open" id="body-oab-escola">
+        <div style="display:flex;gap:8px;margin-bottom:14px;flex-wrap:wrap">
+          <button class="btn btn-blue btn-sm" onclick="openModalOAB('escola','tarefa')">+ Nova Tarefa</button>
+          <button class="btn btn-sm" style="background:#f0fdf4;color:#0f766e;border:0.5px solid #6ee7b7" onclick="openModalOAB('escola','evento')">+ Novo Evento / Reunião</button>
+        </div>
+        <div id="oab-escola-content"></div>
+      </div>
+    </div>
+
+    <!-- ASSUNTOS GERAIS -->
+    <div class="escritorio-block">
+      <div class="escritorio-header" style="background:linear-gradient(135deg,#7c3aed,#a78bfa)" onclick="toggleOabDiv('geral')">
+        <h2>📋 Assuntos Gerais</h2>
+        <span class="chevron open" id="chev-oab-geral">▶</span>
+      </div>
+      <div class="escritorio-body open" id="body-oab-geral">
+        <div style="display:flex;gap:8px;margin-bottom:14px;flex-wrap:wrap">
+          <button class="btn btn-blue btn-sm" onclick="openModalOAB('geral','tarefa')">+ Nova Tarefa</button>
+          <button class="btn btn-sm" style="background:#f3e5f5;color:#7c3aed;border:0.5px solid #d8b4fe" onclick="openModalOAB('geral','evento')">+ Novo Evento / Reunião</button>
+        </div>
+        <div id="oab-geral-content"></div>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- ===== ARQUIVO ===== -->
+  <div id="sec-arquivo" class="section">
+    <div class="card">
+      <div class="card-title">📦 Arquivo Histórico <span style="font-size:12px;color:#b45309;margin-left:auto;font-weight:400">Registros encerrados</span></div>
+      <div id="lista-arquivo"></div>
+    </div>
+  </div>
+
+  <!-- ===== LIXEIRA ===== -->
+  <div id="sec-lixeira" class="section">
+    <div class="card">
+      <div class="card-title">
+        Lixeira
+        <span style="font-size:12px;color:#6e6e73;font-weight:400;margin-left:4px">Itens deletados ficam 30 dias antes de serem removidos automaticamente</span>
+        <button class="btn btn-sm" onclick="esvaziarLixeira()" style="margin-left:auto;background:#fff0f0;color:#ff3b30;border:0.5px solid #ffb3ae">Esvaziar lixeira</button>
+      </div>
+      <div id="lista-lixeira"></div>
+    </div>
+  </div>
+
+</div><!-- /main -->
+
+<!-- ===== MODAL UNIVERSAL ===== -->
+<div class="modal-overlay" id="modal-item">
+  <div class="modal">
+    <h2 id="modal-item-title">Novo Registro</h2>
+    <input type="hidden" id="item-id">
+    <input type="hidden" id="item-tipo">
+    <div id="mara-warning-modal" style="display:none"></div>
+    <div class="form-row">
+      <div class="form-group">
+        <label>Escritório *</label>
+        <select id="item-escritorio">
+          <option value="principal">Escritório Principal</option>
+          <option value="pai">Escritório Pai</option>
+          <option value="mariana">Escritório Mariana</option>
+          <option value="jessica">Escritório Jéssica</option>
+          <option value="dativa">Dativos</option>
+          <option value="andre">Escritório André</option>
+          <option value="felipe">Escritório Felipe</option>
+        </select>
+      </div>
+    </div>
+    <div id="fields-tarefa" class="item-fields" style="display:none">
+      <div class="form-row">
+        <div class="form-group" style="flex:2">
+          <label>Atividade *</label>
+          <input type="text" id="tar-atividade" placeholder="Descrição da atividade" onblur="verificarDuplicata('nome',this.value)">
+        </div>
+      </div>
+      <div class="form-row">
+        <div class="form-group" style="flex:2">
+          <label>Número do Processo</label>
+          <input type="text" id="tar-processo" placeholder="0000000-00.0000.0.00.0000" onblur="verificarDuplicata('processo',this.value)">
+        </div>
+        <div class="form-group">
+          <label>Assunto</label>
+          <input type="text" id="tar-assunto" placeholder="Ex: Levantamento de valores">
+        </div>
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label>Situação</label>
+          <select id="tar-situacao">
+            <option value="pendente">Pendente</option>
+            <option value="em_andamento">Em andamento</option>
+            <option value="em_acompanhamento">Em acompanhamento</option>
+            <option value="delegado">Delegado à Mara</option>
+            <option value="concluido">Concluído ✔️</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label>Prioridade</label>
+          <select id="tar-prioridade">
+            <option value="vermelho">🔴 Alta</option>
+            <option value="amarelo">🟡 Média</option>
+            <option value="verde">🟢 Baixa</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label>Data / Prazo</label>
+          <div class="cal-wrapper">
+            <input type="text" id="tar-data" placeholder="dd/mm/aaaa" readonly onclick="toggleCal('cal-tar')" autocomplete="off">
+            <div class="cal-popup" id="cal-tar"></div>
+          </div>
+        </div>
+      </div>
+      <div class="form-group" style="margin-top:4px">
+        <label>Observações / Anotações</label>
+        <textarea id="tar-obs" maxlength="2000" placeholder="Detalhes, histórico, próximos passos..."></textarea>
+      </div>
+    </div>
+    <div id="fields-audiencia" class="item-fields" style="display:none">
+      <div class="form-row">
+        <div class="form-group">
+          <label>Tipo *</label>
+          <select id="aud-tipo">
+            <option value="AIJ">AIJ</option>
+            <option value="Perícia">Perícia</option>
+            <option value="Audiência de Conciliação">Audiência de Conciliação</option>
+            <option value="Audiência de Instrução">Audiência de Instrução</option>
+            <option value="Audiência Inaugural">Audiência Inaugural</option>
+            <option value="Outro">Outro</option>
+          </select>
+        </div>
+        <div class="form-group" style="flex:2">
+          <label>Número do Processo</label>
+          <input type="text" id="aud-processo" placeholder="0000000-00.0000.0.00.0000" onblur="verificarDuplicata('processo',this.value)">
+        </div>
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label>Cliente</label>
+          <input type="text" id="aud-cliente" placeholder="Nome do cliente" onblur="verificarDuplicata('nome',this.value)">
+        </div>
+        <div class="form-group">
+          <label>Parte Contrária</label>
+          <input type="text" id="aud-parte" placeholder="Nome da parte contrária">
+        </div>
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label>Assunto</label>
+          <input type="text" id="aud-assunto" placeholder="Ex: Trabalhista">
+        </div>
+        <div class="form-group">
+          <label>Data *</label>
+          <div class="cal-wrapper">
+            <input type="text" id="aud-data" placeholder="dd/mm/aaaa" readonly onclick="toggleCal('cal-aud')" autocomplete="off">
+            <div class="cal-popup" id="cal-aud"></div>
+          </div>
+        </div>
+        <div class="form-group">
+          <label>Hora</label>
+          <input type="text" id="aud-hora" placeholder="HH:MM" maxlength="5">
+        </div>
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label>Status</label>
+          <select id="aud-status">
+            <option value="agendada">Agendada</option>
+            <option value="realizada">Realizada ✔️</option>
+            <option value="cancelada">Cancelada</option>
+            <option value="redesignada">Redesignada</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label>Local / Vara</label>
+          <input type="text" id="aud-local" placeholder="Ex: 3ª Vara Cível">
+        </div>
+      </div>
+      <div class="form-group" style="margin-top:4px">
+        <label>Observações</label>
+        <textarea id="aud-obs" maxlength="2000" placeholder="Detalhes, pauta, documentos necessários..."></textarea>
+      </div>
+    </div>
+    <div id="fields-processo" class="item-fields" style="display:none">
+      <div class="form-row">
+        <div class="form-group">
+          <label>Cliente *</label>
+          <input type="text" id="proc-cliente" placeholder="Nome do cliente" onblur="verificarDuplicata('nome',this.value)">
+        </div>
+        <div class="form-group">
+          <label>Parte Contrária</label>
+          <input type="text" id="proc-parte" placeholder="Nome da parte contrária">
+        </div>
+      </div>
+      <div class="form-row">
+        <div class="form-group" style="flex:2">
+          <label>Número do Processo</label>
+          <input type="text" id="proc-numero" placeholder="0000000-00.0000.0.00.0000" onblur="verificarDuplicata('processo',this.value)">
+        </div>
+        <div class="form-group">
+          <label>Assunto / Área</label>
+          <input type="text" id="proc-assunto" placeholder="Ex: Trabalhista, Cível...">
+        </div>
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label>Situação / Status</label>
+          <input type="text" id="proc-situacao" placeholder="Ex: Aguarda julgamento, Em andamento...">
+        </div>
+        <div class="form-group">
+          <label>Vara / Tribunal</label>
+          <input type="text" id="proc-vara" placeholder="Ex: TJSC, Turma Recursal">
+        </div>
+      </div>
+      <div class="form-group" style="margin-top:4px">
+        <label>Observações</label>
+        <textarea id="proc-obs" maxlength="2000" placeholder="Andamentos, histórico, próximos passos..."></textarea>
+      </div>
+      <div style="margin-top:16px;border-top:0.5px solid #e5e5ea;padding-top:14px">
+        <div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.3px;color:#6e6e73;margin-bottom:10px">Criar vínculo rápido</div>
+        <div style="display:flex;gap:8px;margin-bottom:10px">
+          <button type="button" class="btn btn-sm" style="background:#eff6ff;color:#1d4ed8;border:0.5px solid #bfdbfe" onclick="toggleVinculo('tarefa')">+ Tarefa</button>
+          <button type="button" class="btn btn-sm" style="background:#f0fdf4;color:#166534;border:0.5px solid #bbf7d0" onclick="toggleVinculo('audiencia')">+ Audiência / Ato</button>
+        </div>
+        <div id="vinculo-tarefa" style="display:none;background:#f8faff;border:0.5px solid #bfdbfe;border-radius:10px;padding:12px;margin-bottom:8px">
+          <div style="font-size:12px;font-weight:600;color:#1d4ed8;margin-bottom:8px">Nova Tarefa vinculada</div>
+          <div class="form-row">
+            <div class="form-group" style="flex:2">
+              <label>Atividade *</label>
+              <input type="text" id="vt-atividade" placeholder="Ex: Protocolar recurso, Requerer prazo...">
+            </div>
+          </div>
+          <div class="form-row">
+            <div class="form-group">
+              <label>Prazo</label>
+              <div class="cal-wrapper">
+                <input type="text" id="vt-prazo" placeholder="dd/mm/aaaa" readonly onclick="toggleCal('cal-vt')" autocomplete="off">
+                <div class="cal-popup" id="cal-vt"></div>
+              </div>
+            </div>
+            <div class="form-group">
+              <label>Situação</label>
+              <select id="vt-situacao">
+                <option value="pendente">Pendente</option>
+                <option value="em_andamento">Em andamento</option>
+                <option value="em_acompanhamento">Em acompanhamento</option>
+                <option value="concluido">Concluído ✔️</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label>Prioridade</label>
+              <select id="vt-prioridade">
+                <option value="vermelho">🔴 Alta</option>
+                <option value="amarelo">🟡 Média</option>
+                <option value="verde">🟢 Baixa</option>
+              </select>
+            </div>
+          </div>
+        </div>
+        <div id="vinculo-audiencia" style="display:none;background:#f0fdf4;border:0.5px solid #bbf7d0;border-radius:10px;padding:12px;margin-bottom:8px">
+          <div style="font-size:12px;font-weight:600;color:#166534;margin-bottom:8px">Nova Audiência / Ato vinculado</div>
+          <div class="form-row">
+            <div class="form-group">
+              <label>Tipo</label>
+              <select id="va-tipo">
+                <option value="AIJ">AIJ</option>
+                <option value="Audiência">Audiência</option>
+                <option value="Perícia">Perícia</option>
+                <option value="Prazo">Prazo</option>
+                <option value="Diligência">Diligência</option>
+                <option value="Outro">Outro</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label>Data *</label>
+              <div class="cal-wrapper">
+                <input type="text" id="va-data" placeholder="dd/mm/aaaa" readonly onclick="toggleCal('cal-va')" autocomplete="off">
+                <div class="cal-popup" id="cal-va"></div>
+              </div>
+            </div>
+            <div class="form-group">
+              <label>Hora</label>
+              <input type="text" id="va-hora" placeholder="HH:MM" maxlength="5">
+            </div>
+          </div>
+          <div class="form-row">
+            <div class="form-group">
+              <label>Local</label>
+              <input type="text" id="va-local" placeholder="Ex: Fórum, Online...">
+            </div>
+            <div class="form-group">
+              <label>Status</label>
+              <select id="va-status">
+                <option value="agendada">Agendada</option>
+                <option value="realizada">Realizada</option>
+                <option value="cancelada">Cancelada</option>
+              </select>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div id="fields-demanda" class="item-fields" style="display:none">
+      <div class="form-row">
+        <div class="form-group" style="flex:2">
+          <label>Atividade *</label>
+          <input type="text" id="dem-atividade" placeholder="Descrição da demanda">
+        </div>
+      </div>
+      <div class="form-row">
+        <div class="form-group" style="flex:2">
+          <label>Número do Processo</label>
+          <input type="text" id="dem-processo" placeholder="0000000-00.0000.0.00.0000">
+        </div>
+        <div class="form-group">
+          <label>Assunto</label>
+          <input type="text" id="dem-assunto" placeholder="Ex: Processo administrativo">
+        </div>
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label>Prazo</label>
+          <div class="cal-wrapper">
+            <input type="text" id="dem-prazo" placeholder="dd/mm/aaaa" readonly onclick="toggleCal('cal-dem')" autocomplete="off">
+            <div class="cal-popup" id="cal-dem"></div>
+          </div>
+        </div>
+        <div class="form-group">
+          <label>Situação</label>
+          <select id="dem-situacao">
+            <option value="pendente">Pendente</option>
+            <option value="em_andamento">Em andamento</option>
+            <option value="em_monitoramento">Em monitoramento</option>
+            <option value="concluido">Concluído ✔️</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label>Prioridade</label>
+          <select id="dem-prioridade">
+            <option value="vermelho">🔴 Alta</option>
+            <option value="amarelo">🟡 Média</option>
+            <option value="verde">🟢 Baixa</option>
+          </select>
+        </div>
+      </div>
+      <div class="form-group" style="margin-top:4px">
+        <label>Observações</label>
+        <textarea id="dem-obs" maxlength="2000" placeholder="Detalhes da demanda..."></textarea>
+      </div>
+    </div>
+    <div id="fields-delegacao" class="item-fields" style="display:none">
+      <div class="form-row">
+        <div class="form-group" style="flex:2">
+          <label>Atividade *</label>
+          <input type="text" id="del-atividade" placeholder="Descrição da delegação" onblur="verificarDuplicata('nome',this.value)">
+        </div>
+      </div>
+      <div class="form-row">
+        <div class="form-group" style="flex:2">
+          <label>Número do Processo</label>
+          <input type="text" id="del-processo" placeholder="0000000-00.0000.0.00.0000" onblur="verificarDuplicata('processo',this.value)">
+        </div>
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label>Situação</label>
+          <select id="del-situacao">
+            <option value="aguardando_confirmacao">Aguardando confirmação</option>
+            <option value="aguardando_retorno">Aguardando retorno</option>
+            <option value="aguardando_execucao">Aguardando execução</option>
+            <option value="aguardando_procuracoes">Aguardando procurações</option>
+            <option value="em_andamento">Em andamento</option>
+            <option value="concluido">Concluído ✔️</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label>Vinculado</label>
+          <select id="del-vinculado">
+            <option value="">— Nenhum —</option>
+            <option value="principal">Principal</option>
+            <option value="pai">Pai</option>
+            <option value="mariana">Mariana</option>
+            <option value="jessica">Jéssica</option>
+            <option value="dativa">Dativos</option>
+            <option value="andre">Escritório André</option>
+            <option value="felipe">Escritório Felipe</option>
+            <option value="outro">Outro</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label>Prioridade</label>
+          <select id="del-prioridade">
+            <option value="vermelho">🔴 Alta</option>
+            <option value="amarelo">🟡 Média</option>
+            <option value="verde">🟢 Baixa</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label>Data / Prazo</label>
+          <div class="cal-wrapper">
+            <input type="text" id="del-data" placeholder="dd/mm/aaaa" readonly onclick="toggleCal('cal-del')" autocomplete="off">
+            <div class="cal-popup" id="cal-del"></div>
+          </div>
+        </div>
+      </div>
+      <div class="form-group" style="margin-top:4px">
+        <label>Observações</label>
+        <textarea id="del-obs" maxlength="2000" placeholder="Detalhes, status de retorno..."></textarea>
+      </div>
+    </div>
+    <div id="item-feed-section" style="display:none;margin-top:14px">
+      <div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.3px;color:#6e6e73;margin-bottom:8px">Anotações / Histórico</div>
+      <div class="feed-area">
+        <div class="feed-input-area">
+          <textarea id="item-feed-input" placeholder="Nova anotação..." maxlength="2000" rows="2" oninput="updateCounter('item-feed-input','item-feed-counter')"></textarea>
+          <div style="display:flex;justify-content:space-between;align-items:center">
+            <span class="char-counter" id="item-feed-counter">0/2000</span>
+            <button class="btn btn-blue btn-sm" onclick="addFeedItem()">Comentar</button>
+          </div>
+        </div>
+        <div id="item-feed-list"></div>
+      </div>
+      <div id="item-hist-block" style="margin-top:8px"></div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-gray" onclick="closeModal('modal-item')">Cancelar</button>
+      <button class="btn btn-amber btn-sm" id="btn-arquivar-item" onclick="arquivarDoModal()" style="display:none">📦 Arquivar</button>
+      <button class="btn btn-blue" onclick="saveItem()">Salvar</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL HISTÓRICO -->
+<div class="modal-overlay" id="modal-historico">
+  <div class="modal">
+    <h2>Histórico de Status</h2>
+    <ul class="hist-timeline" id="hist-list"></ul>
+    <div class="modal-footer"><button class="btn btn-gray" onclick="closeModal('modal-historico')">Fechar</button></div>
+  </div>
+</div>
+
+<!-- MODAL OAB -->
+<div class="modal-overlay" id="modal-oab">
+  <div class="modal">
+    <h2 id="modal-oab-title">Novo Item OAB</h2>
+    <input type="hidden" id="oab-item-id">
+    <input type="hidden" id="oab-item-divisao">
+    <input type="hidden" id="oab-item-tipo">
+    <div id="oab-tipo-badge" style="margin-bottom:14px"></div>
+    <div class="form-row">
+      <div class="form-group" style="flex:2">
+        <label>Título *</label>
+        <input type="text" id="oab-titulo" placeholder="Descrição da tarefa ou evento">
+      </div>
+    </div>
+    <!-- Campos EVENTO -->
+    <div id="oab-fields-evento" style="display:none">
+      <div class="form-row">
+        <div class="form-group">
+          <label>Data *</label>
+          <div class="cal-wrapper">
+            <input type="text" id="oab-data" placeholder="dd/mm/aaaa" readonly onclick="toggleCal('cal-oab')" autocomplete="off">
+            <div class="cal-popup" id="cal-oab"></div>
+          </div>
+        </div>
+        <div class="form-group">
+          <label>Hora</label>
+          <input type="text" id="oab-hora" placeholder="HH:MM" maxlength="5">
+        </div>
+        <div class="form-group" style="flex:2">
+          <label>Local</label>
+          <input type="text" id="oab-local" placeholder="Ex: Sede OAB/SC, Online...">
+        </div>
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label>Status</label>
+          <select id="oab-status-evento">
+            <option value="agendado">Agendado</option>
+            <option value="realizado">Realizado ✔️</option>
+            <option value="cancelado">Cancelado</option>
+            <option value="adiado">Adiado</option>
+          </select>
+        </div>
+      </div>
+    </div>
+    <!-- Campos TAREFA -->
+    <div id="oab-fields-tarefa" style="display:none">
+      <div class="form-row">
+        <div class="form-group">
+          <label>Prazo</label>
+          <div class="cal-wrapper">
+            <input type="text" id="oab-prazo" placeholder="dd/mm/aaaa" readonly onclick="toggleCal('cal-oab-prazo')" autocomplete="off">
+            <div class="cal-popup" id="cal-oab-prazo"></div>
+          </div>
+        </div>
+        <div class="form-group">
+          <label>Prioridade</label>
+          <select id="oab-prioridade">
+            <option value="vermelho">🔴 Alta</option>
+            <option value="amarelo">🟡 Média</option>
+            <option value="verde">🟢 Baixa</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label>Situação</label>
+          <select id="oab-status-tarefa">
+            <option value="pendente">Pendente</option>
+            <option value="em_andamento">Em andamento</option>
+            <option value="concluido">Concluído ✔️</option>
+          </select>
+        </div>
+      </div>
+    </div>
+    <div class="form-group" style="margin-top:4px">
+      <label>Observações</label>
+      <textarea id="oab-obs" maxlength="2000" rows="3" placeholder="Detalhes, pauta, notas..."></textarea>
+    </div>
+    <!-- Feed anotações -->
+    <div id="oab-feed-section" style="display:none;margin-top:14px">
+      <div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.3px;color:#6e6e73;margin-bottom:8px">Anotações</div>
+      <div class="feed-area">
+        <div class="feed-input-area">
+          <textarea id="oab-feed-input" placeholder="Nova anotação..." maxlength="2000" rows="2" oninput="updateCounter('oab-feed-input','oab-feed-counter')"></textarea>
+          <div style="display:flex;justify-content:space-between;align-items:center">
+            <span class="char-counter" id="oab-feed-counter">0/2000</span>
+            <button class="btn btn-blue btn-sm" onclick="addOABFeedItem()">Comentar</button>
+          </div>
+        </div>
+        <div id="oab-feed-list"></div>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-gray" onclick="closeModal('modal-oab')">Cancelar</button>
+      <button class="btn btn-blue" onclick="saveOABItem()">Salvar</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL OFFLINE -->
+<div class="modal-overlay" id="modal-offline">
+  <div class="modal" style="max-width:480px">
+    <h2>⚠ Dados não sincronizados</h2>
+    <p style="font-size:13px;color:#3a3a3c;line-height:1.6;margin-bottom:16px">Há alterações salvas neste computador que ainda não chegaram ao Google Sheets. Se você abrir o sistema em outro PC agora, essas alterações podem ser perdidas.</p>
+    <div style="background:#f0fdf4;border:0.5px solid #bbf7d0;border-radius:10px;padding:14px;margin-bottom:12px">
+      <strong style="font-size:13px;color:#166534">Opção 1 — Tentar enviar ao Sheets</strong>
+      <p style="font-size:12px;color:#166534;margin:6px 0 10px">Funciona se você estiver com internet. O sistema tentará enviar todos os dados agora.</p>
+      <button class="btn btn-blue" style="width:100%" id="btn-retry-sync" onclick="retrySync()">↑ Tentar sincronizar agora</button>
+      <div id="retry-sync-status" style="font-size:12px;margin-top:8px;text-align:center;min-height:18px"></div>
+    </div>
+    <div style="background:#fff8e1;border:0.5px solid #fde68a;border-radius:10px;padding:14px;margin-bottom:12px">
+      <strong style="font-size:13px;color:#92400e">Opção 2 — Transferir para outro PC</strong>
+      <p style="font-size:12px;color:#92400e;margin:6px 0 10px">Se o Sheets não responder, exporte os dados locais e importe no outro PC antes de abrir lá.</p>
+      <button class="btn btn-amber" style="width:100%" onclick="exportarParaTransferencia()">⬇ Exportar dados para transferência</button>
+    </div>
+    <div style="background:#fef2f2;border:0.5px solid #fecaca;border-radius:10px;padding:14px;margin-bottom:16px">
+      <strong style="font-size:13px;color:#991b1b">O que NÃO fazer</strong>
+      <p style="font-size:12px;color:#991b1b;margin:6px 0 0">Não abra o sistema em outro PC enquanto este estiver com "Dados não sincronizados".</p>
+    </div>
+    <div class="modal-footer"><button class="btn btn-gray" onclick="closeModal('modal-offline')">Fechar</button></div>
+  </div>
+</div>
+
+<!-- MODAL CONFIG SHEETS -->
+<div class="modal-overlay" id="modal-gs">
+  <div class="modal">
+    <h2>⚙ Google Sheets</h2>
+    <div class="form-group" style="margin-bottom:14px">
+      <label>URL do Apps Script (Web App)</label>
+      <input type="text" id="gs-url-input" placeholder="https://script.google.com/macros/s/.../exec">
+    </div>
+    <p style="font-size:12px;color:#6e6e73;line-height:1.6;margin-bottom:14px">Cole a URL gerada ao publicar o Apps Script como Web App.</p>
+    <div style="background:#fff8e1;border:0.5px solid #fde68a;border-radius:10px;padding:12px;margin-bottom:14px;font-size:12px;color:#92400e">
+      <strong>🆘 Recuperação de emergência</strong><br>
+      Se os dados sumirem, tente recuperar o último backup local salvo automaticamente.
+      <button class="btn btn-amber btn-sm" style="margin-top:8px;width:100%" onclick="recuperarBackupLocal()">Recuperar último backup local</button>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-gray" onclick="closeModal('modal-gs')">Cancelar</button>
+      <button class="btn btn-blue" onclick="saveGsConfig()">Conectar e Carregar</button>
+    </div>
+  </div>
+</div>
+
+<!-- PAINEL LATERAL PROCESSO -->
+<div id="painel-overlay" onclick="fecharPainel()"></div>
+<div id="painel-processo">
+  <div id="painel-header">
+    <h3 id="painel-titulo">Processo</h3>
+    <button id="painel-close" onclick="fecharPainel()">✕</button>
+  </div>
+  <div id="painel-body"></div>
+  <div id="painel-footer"></div>
+</div>
+
+<script>
+// ============================================================
+// CONSTANTES
+// ============================================================
+const LS_KEY = 'gestao_rodrigo_2026';
+const sortState = {
+  tarefas:    {col: null, dir: 1},
+  audiencias: {col: null, dir: 1},
+  processos:  {col: null, dir: 1},
+  delegacoes: {col: null, dir: 1}
+};
+function toggleSort(aba, col){
+  const s = sortState[aba];
+  if(s.col === col){ s.dir *= -1; } else { s.col = col; s.dir = 1; }
+  if(aba==='tarefas') renderTarefas();
+  else if(aba==='audiencias') renderAudiencias();
+  else if(aba==='processos') renderProcessos();
+  else if(aba==='delegacoes') renderDelegacoes();
+}
+function sortList(lista, aba){
+  const {col, dir} = sortState[aba];
+  if(!col) return lista;
+  return [...lista].sort((a,b)=>{
+    let av = a[col]||'', bv = b[col]||'';
+    const dA = parseDatePt(av), dB = parseDatePt(bv);
+    if(dA && dB) return (dA - dB) * dir;
+    av = String(av).toLowerCase(); bv = String(bv).toLowerCase();
+    return av < bv ? -dir : av > bv ? dir : 0;
+  });
+}
+function thSort(aba, col, label){
+  const s = sortState[aba];
+  const cls = s.col===col ? (s.dir===1?'asc':'desc') : '';
+  return `<th class="sortable ${cls}" onclick="toggleSort('${aba}','${col}')">${label}</th>`;
+}
+const ESCRITORIOS = {
+  principal: {label:'Escritório Principal', cor:'cor-principal', hex:'#1a56db'},
+  pai:       {label:'Escritório Pai',        cor:'cor-pai',       hex:'#0e7490'},
+  mariana:   {label:'Escritório Mariana',    cor:'cor-mariana',   hex:'#7c3aed'},
+  jessica:   {label:'Escritório Jéssica',    cor:'cor-jessica',   hex:'#be185d'},
+  dativa:    {label:'Dativos',               cor:'cor-dativa',    hex:'#b45309'},
+  andre:     {label:'Escritório André',      cor:'cor-andre',     hex:'#0f766e'},
+  felipe:    {label:'Escritório Felipe',     cor:'cor-felipe',    hex:'#7e22ce'},
+};
+const MARA_COR = 'cor-mara';
+const OAB_DIVS = {
+  licitacoes: {label:'Comissão de Licitações', cor:'#b45309'},
+  escola:     {label:'OAB vai à Escola',        cor:'#0f766e'},
+  geral:      {label:'Assuntos Gerais',          cor:'#7c3aed'}
+};
+
+// ============================================================
+// ESTADO
+// ============================================================
+let GS_URL = 'https://script.google.com/macros/s/AKfycbxtcg8NzlIkgIIJKGF3lGQu7vAWFq39Plb7QoiHxf6WpGtCYnky4psVn6EGkFBhXn3XIQ/exec';
+let data = {tarefas:[], audiencias:[], processos:[], demandas:[], delegacoes:[], oab:[], arquivo:[], lixeira:[]};
+let filters = {tarefas:'todos', audiencias:'todos', processos:'todos', demandas:'todos'};
+let syncTimer = null;
+let _editCtx = {tipo:null, id:null};
+
+// ============================================================
+// STORAGE / SYNC
+// ============================================================
+function loadData(){
+  try {
+    const r = localStorage.getItem(LS_KEY);
+    if(r){ const p=JSON.parse(r); if(!p.lixeira) p.lixeira=[]; if(!p.oab) p.oab=[]; return p; }
+  } catch(e){}
+  return {tarefas:[],audiencias:[],processos:[],demandas:[],delegacoes:[],oab:[],arquivo:[],lixeira:[]};
+}
+
+function saveData(abaHint){
+  const temDados = ['tarefas','audiencias','processos','delegacoes'].some(a=>data[a]&&data[a].length>0);
+  const temOab = data.oab && data.oab.length > 0;
+  if(!temDados && !temOab){
+    console.warn('saveData bloqueado — dados vazios.');
+    return;
+  }
+  data._lastModified = Date.now();
+  data._comentarios = getLembretes();
+  localStorage.setItem(LS_KEY, JSON.stringify(data));
+  localStorage.setItem(LS_KEY+'_backup_local', JSON.stringify({ts: Date.now(), data}));
+  setStatus('Salvando…','saving');
+  scheduleSync(abaHint);
+}
+
+function scheduleSync(aba){
+  clearTimeout(syncTimer);
+  syncTimer = setTimeout(flushSync, 1200);
+}
+
+async function flushSync(){
+  if(!GS_URL){ markPendingSync(); return; }
+  if(_isSyncing){ _syncQueued = true; return; }
+  await syncAbas(['tarefas','audiencias','processos','delegacoes','oab','arquivo','lixeira']);
+}
+
+function scheduleSyncToSheets(){ scheduleSync(null); }
+
+let _isSyncing = false;
+let _syncQueued = false;
+
+async function fetchGET(url){
+  const ctrl = new AbortController();
+  const timer = setTimeout(()=>ctrl.abort(), 10000);
+  try {
+    const r = await fetch(url, {signal: ctrl.signal});
+    clearTimeout(timer);
+    return await r.json();
+  } catch(e){ clearTimeout(timer); throw e; }
+}
+
+async function syncAbas(abas){
+  if(!GS_URL){ markPendingSync(); return; }
+  if(_isSyncing){ _syncQueued = true; return; }
+  _isSyncing = true;
+  setStatus('Salvando…','saving');
+  const _ts = data._lastModified || Date.now();
+  const payload = {data: {}};
+  abas.forEach(aba => { payload.data[aba] = data[aba]||[]; });
+  payload.data['meta'] = [{chave:'_lastModified', valor: String(_ts)}];
+  payload.projeto = 'gestao_escritorio_2026';
+  let ok = false;
+  const bodyStr = JSON.stringify(payload);
+  for(let tentativa = 1; tentativa <= 3 && !ok; tentativa++){
+    try {
+      if(tentativa > 1){
+        setStatus('Salvando… (tentativa '+tentativa+'/3)','saving');
+        await new Promise(r => setTimeout(r, 2000 * tentativa));
+      }
+      const ctrl = new AbortController();
+      const timer = setTimeout(()=>ctrl.abort(), 45000);
+      const res = await fetch(GS_URL, {
+        method: 'POST',
+        headers: {'Content-Type':'text/plain'},
+        body: bodyStr,
+        signal: ctrl.signal
+      });
+      clearTimeout(timer);
+      const json = await res.json();
+      if(json.ok) ok = true;
+    } catch(e){ console.warn('POST tentativa '+tentativa+' falhou:', e.message||e); }
+  }
+  if(!ok){
+    try {
+      const total = abas.reduce((n,a)=>n+(data[a]||[]).length,0);
+      let done = 0;
+      for(const aba of abas){
+        const items = data[aba]||[];
+        if(items.length === 0){
+          const p = encodeURIComponent(JSON.stringify({aba, items:[], offset:0, total:0}));
+          try { await fetchGET(GS_URL+'?action=saveAba&data='+p); } catch(e){}
+          continue;
+        }
+        for(let i=0; i<items.length; i++){
+          done++;
+          setStatus('Salvando… '+done+'/'+total,'saving');
+          const p = encodeURIComponent(JSON.stringify({aba, items:[items[i]], offset:i, total:items.length}));
+          const j = await fetchGET(GS_URL+'?action=saveAba&data='+p);
+          if(!j.ok){ markPendingSync(); setStatus('Offline — pendente','offline'); _isSyncing=false; return; }
+        }
+      }
+      ok = true;
+    } catch(e){}
+  }
+  if(ok){
+    setStatus('Sheets ✓','ok');
+    clearPendingSync();
+    localStorage.setItem(LS_KEY+'_lastConfirmedSync', String(_ts));
+  } else {
+    markPendingSync();
+    setStatus('Offline — pendente','offline');
+  }
+  _isSyncing = false;
+  if(_syncQueued){ _syncQueued=false; setTimeout(()=>flushSync(), 300); }
+}
+
+async function syncToSheets(){
+  const todasAbas = ['tarefas','audiencias','processos','delegacoes','oab','arquivo','lixeira'];
+  await syncAbas(todasAbas);
+}
+
+function markPendingSync(){
+  localStorage.setItem(LS_KEY+'_pendingSync', Date.now().toString());
+  const btn = document.getElementById('btn-sync-pending');
+  if(btn) btn.style.display='';
+}
+function clearPendingSync(){
+  localStorage.removeItem(LS_KEY+'_pendingSync');
+  const btn = document.getElementById('btn-sync-pending');
+  if(btn) btn.style.display='none';
+}
+function abrirModalOffline(){
+  document.getElementById('retry-sync-status').textContent='';
+  document.getElementById('btn-retry-sync').disabled=false;
+  document.getElementById('btn-retry-sync').textContent='↑ Tentar sincronizar agora';
+  openModal('modal-offline');
+}
+async function retrySync(){
+  if(!GS_URL){ document.getElementById('retry-sync-status').textContent='URL do Sheets não configurada.'; return; }
+  const btn = document.getElementById('btn-retry-sync');
+  const status = document.getElementById('retry-sync-status');
+  btn.disabled=true; btn.textContent='Sincronizando…';
+  status.textContent=''; status.style.color='#6e6e73';
+  await syncToSheets();
+  if(localStorage.getItem(LS_KEY+'_pendingSync')){
+    status.style.color='#c62828';
+    status.textContent='Falhou. Verifique a conexão ou use a Opção 2.';
+    btn.disabled=false; btn.textContent='↑ Tentar novamente';
+  } else {
+    status.style.color='#166534';
+    status.textContent='✅ Sincronizado com sucesso!';
+    setTimeout(()=>closeModal('modal-offline'), 1500);
+  }
+}
+function exportarParaTransferencia(){
+  const payload = {_tipo:'transferencia_pc',_ts:Date.now(),_origem:window.location.href,...data};
+  const blob = new Blob([JSON.stringify(payload, null, 2)], {type:'application/json'});
+  const a = document.createElement('a');
+  const d = new Date();
+  const nome = 'transferencia_'+String(d.getDate()).padStart(2,'0')+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+d.getFullYear()+'_'+String(d.getHours()).padStart(2,'0')+String(d.getMinutes()).padStart(2,'0')+'.json';
+  a.href = URL.createObjectURL(blob); a.download = nome; a.click(); URL.revokeObjectURL(a.href);
+}
+
+function parseSheetRow(r, dateFields, skipFields){
+  const obj={};
+  Object.keys(r).forEach(k=>{
+    let v = r[k];
+    if(v instanceof Date){
+      if(isNaN(v.getTime())){ obj[k]=''; return; }
+      if(skipFields.includes(k)){ obj[k]=String(v.getHours()).padStart(2,'0')+':'+String(v.getMinutes()).padStart(2,'0'); return; }
+      obj[k] = formatDate(v); return;
+    }
+    if(r[k]==='TRUE'||r[k]===true){ obj[k]=true; return; }
+    if(r[k]==='FALSE'||r[k]===false){ obj[k]=false; return; }
+    if(skipFields.includes(k)){
+      const s = String(r[k]||'');
+      const m = s.match(/T(\d{2}):(\d{2})/);
+      obj[k] = m ? m[1]+':'+m[2] : s; return;
+    }
+    if(dateFields.includes(k)){ obj[k]=formatDate(r[k]); return; }
+    const s=String(r[k]||'');
+    if(s.match(/^\d{4}-\d{2}-\d{2}T/)){ obj[k]=formatDate(r[k]); return; }
+    if(s.match(/^1899-12-30/)){ obj[k]=''; return; }
+    try{ obj[k]=(typeof r[k]==='string'&&(r[k].startsWith('[')||r[k].startsWith('{')))?JSON.parse(r[k]):(r[k]??''); }
+    catch(e){ obj[k]=r[k]??''; }
+  });
+  return obj;
+}
+
+async function loadFromSheets(){
+  clearTimeout(syncTimer);
+  if(!GS_URL){ data=loadData(); migrateData(); seedDados(); render(); return; }
+  setStatus('Carregando…','saving');
+  mostrarTelaCarregando(true);
+  try {
+    const res = await fetch(GS_URL+'?action=load');
+    const json = await res.json();
+    if(json.ok && json.data){
+      const abas=['tarefas','audiencias','processos','demandas','delegacoes','oab','arquivo','lixeira'];
+      const dateFields=['data','prazo']; const skipFields=['hora'];
+      const sheetsTemDados = abas.some(a=>json.data[a]&&json.data[a].length>0);
+      let sheetsTs = 0;
+      try {
+        const metaRows = json.data['meta']||[];
+        const metaRow = metaRows.find(r=>r.chave==='_lastModified');
+        if(metaRow) sheetsTs = parseInt(metaRow.valor||'0');
+      } catch(e){}
+      const local = loadData();
+      const localTs = parseInt(local._lastModified||'0');
+      const hasPending = !!localStorage.getItem(LS_KEY+'_pendingSync');
+      const localMaisRecente = localTs > sheetsTs && abas.some(a=>local[a]&&local[a].length>0);
+      if(sheetsTemDados && !localMaisRecente && !hasPending){
+        abas.forEach(aba=>{
+          try {
+            if(json.data[aba]&&json.data[aba].length>0){
+              data[aba]=json.data[aba].map(r=>parseSheetRow(r,dateFields,skipFields));
+            } else {
+              // Aba ausente no Sheets — preserva dados locais se existirem (ex: aba oab ainda não publicada no Apps Script)
+              if(local[aba]&&local[aba].length>0) data[aba]=local[aba];
+              else if(!Array.isArray(data[aba])) data[aba]=[];
+            }
+          } catch(abaErr){ console.warn('Erro ao processar aba', aba, abaErr); }
+        });
+        // Restaura comentários do campo _comentarios salvo no data (sincronizado via Sheets)
+        // Restaura comentários do Sheets — pode vir como array ou string JSON
+        let _comsSheets = data._comentarios;
+        if(!_comsSheets && json.data && json.data._comentarios) _comsSheets = json.data._comentarios;
+        if(typeof _comsSheets === 'string'){ try{ _comsSheets=JSON.parse(_comsSheets); }catch(e){ _comsSheets=null; } }
+        if(_comsSheets && Array.isArray(_comsSheets) && _comsSheets.length > 0){
+          const _comsLocal = getLembretes();
+          const _idsLocal = new Set(_comsLocal.map(c=>c.id));
+          const _novos = _comsSheets.filter(c=>c.id&&!_idsLocal.has(c.id));
+          if(_novos.length > 0){
+            const _merged = [..._comsLocal,..._novos].sort((a,b)=>(b.ts||'').localeCompare(a.ts||''));
+            saveLembretesData(_merged);
+            renderComentarios();
+          }
+        }
+        localStorage.setItem(LS_KEY, JSON.stringify(data));
+        localStorage.setItem(LS_KEY+'_lastConfirmedSync', String(sheetsTs||Date.now()));
+        // Se alguma aba local foi preservada (ex: oab não publicada no Apps Script ainda), re-envia ao Sheets
+        const _temLocalNaoEnviado = abas.some(a=>local[a]&&local[a].length>0&&(!json.data[a]||!json.data[a].length));
+        if(_temLocalNaoEnviado){ scheduleSync(null); }
+        setStatus('Sheets ✓','ok');
+      } else if(localMaisRecente || hasPending){
+        data = local;
+        // Garante que comentários locais estejam no data antes de enviar
+        data._comentarios = getLembretes();
+        mostrarTelaCarregando(false);
+        setStatus('Enviando dados locais…','saving');
+        await syncToSheets();
+        mostrarTelaCarregando(false);
+        migrateData(); render(); return;
+      } else {
+        const localTemDados = abas.some(a=>local[a]&&local[a].length>0);
+        if(localTemDados){ data = local; } else { data=loadData(); migrateData(); seedDados(); }
+        mostrarTelaCarregando(false);
+        setStatus('Enviando dados…','saving');
+        await syncToSheets();
+        mostrarTelaCarregando(false);
+        migrateData(); render(); return;
+      }
+    } else {
+      const local=loadData();
+      if(Object.values(local).some(v=>Array.isArray(v)&&v.length>0)) data=local;
+      if(localStorage.getItem(LS_KEY+'_pendingSync')){ const btn=document.getElementById('btn-sync-pending'); if(btn) btn.style.display=''; }
+      setStatus('Offline — dados locais','offline');
+    }
+  } catch(e){
+    const local=loadData();
+    if(Object.values(local).some(v=>Array.isArray(v)&&v.length>0)) data=local;
+    if(localStorage.getItem(LS_KEY+'_pendingSync')){ const btn=document.getElementById('btn-sync-pending'); if(btn) btn.style.display=''; }
+    setStatus('Offline — dados locais','offline');
+  }
+  mostrarTelaCarregando(false);
+  migrateData(); render();
+}
+
+function mostrarTelaCarregando(show){
+  let el=document.getElementById('loading-screen');
+  if(show){
+    if(!el){
+      el=document.createElement('div');
+      el.id='loading-screen';
+      el.style.cssText='position:fixed;inset:0;background:rgba(255,255,255,0.96);z-index:9999;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:14px;backdrop-filter:blur(8px)';
+      el.innerHTML=`<div style="width:44px;height:44px;border:3px solid #e5e5ea;border-top-color:#0071e3;border-radius:50%;animation:spin .8s linear infinite"></div><div style="font-size:14px;color:#6e6e73;font-weight:500">Carregando dados do Google Sheets…</div><div style="font-size:12px;color:#aaa">Buscando a versão mais recente</div>`;
+      if(!document.getElementById('spin-style')){
+        const s=document.createElement('style'); s.id='spin-style';
+        s.textContent='@keyframes spin{to{transform:rotate(360deg)}}';
+        document.head.appendChild(s);
+      }
+      document.body.appendChild(el);
+    }
+    el.style.display='flex';
+  } else { if(el) el.style.display='none'; }
+}
+
+function setStatus(txt,type){
+  const el=document.getElementById('status-indicator');
+  el.textContent=txt; el.className=type==='ok'?'ok':type==='saving'?'saving':'offline';
+}
+function openGsConfig(){ document.getElementById('gs-url-input').value=GS_URL; openModal('modal-gs'); }
+function saveGsConfig(){ GS_URL=document.getElementById('gs-url-input').value.trim(); localStorage.setItem(LS_KEY+'_gsurl',GS_URL); closeModal('modal-gs'); loadFromSheets(); }
+
+// ============================================================
+// MIGRAÇÃO
+// ============================================================
+function migrateData(){
+  if(!Array.isArray(data.oab)) data.oab=[];
+  data.oab.forEach(r=>{ if(!r.id) r.id=uid(); if(!Array.isArray(r.anotacoes)) r.anotacoes=[]; if(!Array.isArray(r.historico)) r.historico=[]; });
+  const abas=['tarefas','audiencias','processos','demandas','delegacoes'];
+  abas.forEach(aba=>{
+    if(!Array.isArray(data[aba])) data[aba]=[];
+    data[aba].forEach(r=>{
+      if(!r.id) r.id=uid();
+      if(!Array.isArray(r.anotacoes)) r.anotacoes=[];
+      if(!Array.isArray(r.historico)) r.historico=[];
+    });
+  });
+  if(!Array.isArray(data.arquivo)) data.arquivo=[];
+  if(!Array.isArray(data.lixeira)) data.lixeira=[];
+  if(Array.isArray(data.demandas) && data.demandas.length > 0){
+    data.demandas.forEach(d=>{
+      const jaExiste = data.tarefas.some(t => t._migradoDeDemanda === d.id);
+      if(jaExiste) return;
+      data.tarefas.push({
+        id:uid(), escritorio:d.escritorio||'mariana', atividade:d.atividade||'',
+        processo:d.processo||'', assunto:d.assunto||'',
+        situacao:d.situacao==='em_monitoramento'?'em_acompanhamento':(d.situacao||'pendente'),
+        prioridade:d.prioridade||'vermelho', data:d.prazo||'', obs:d.obs||'',
+        anotacoes:d.anotacoes||[], historico:d.historico||[], _migradoDeDemanda:d.id
+      });
+    });
+    data.demandas = [];
+  }
+  const agora = Date.now();
+  data.lixeira = data.lixeira.filter(r => {
+    if(!r._deletadoEm) return false;
+    const partes = r._deletadoEm.match(/(\d{2})\/(\d{2})\/(\d{4}) (\d{2}):(\d{2})/);
+    if(!partes) return false;
+    const dt = new Date(+partes[3], +partes[2]-1, +partes[1], +partes[4], +partes[5]);
+    return (agora - dt.getTime()) < 30 * 24 * 60 * 60 * 1000;
+  });
+}
+
+// ============================================================
+// UTILS
+// ============================================================
+function uid(){ return Date.now().toString(36)+Math.random().toString(36).substr(2,5); }
+function pad(n){ return String(n).padStart(2,'0'); }
+function now(){
+  // Força fuso horário America/Sao_Paulo independente do PC
+  try {
+    const d=new Date();
+    const fmt=new Intl.DateTimeFormat('pt-BR',{timeZone:'America/Sao_Paulo',day:'2-digit',month:'2-digit',year:'numeric',hour:'2-digit',minute:'2-digit',hour12:false});
+    const p=Object.fromEntries(fmt.formatToParts(d).map(x=>[x.type,x.value]));
+    return `${p.day}/${p.month}/${p.year} ${p.hour}:${p.minute}`;
+  } catch(e){
+    const d=new Date();
+    return pad(d.getDate())+'/'+pad(d.getMonth()+1)+'/'+d.getFullYear()+' '+pad(d.getHours())+':'+pad(d.getMinutes());
+  }
+}
+function today(){
+  const d=new Date();
+  return pad(d.getDate())+'/'+pad(d.getMonth()+1)+'/'+d.getFullYear();
+}
+function formatDate(val){
+  if(!val&&val!==0) return '';
+  if(val instanceof Date){
+    if(isNaN(val.getTime())) return '';
+    return pad(val.getDate())+'/'+pad(val.getMonth()+1)+'/'+val.getFullYear();
+  }
+  const s=String(val).trim();
+  if(!s||s==='0') return '';
+  if(/^\d{2}\/\d{2}\/\d{4}$/.test(s)) return s;
+  const m=s.match(/^(\d{4})-(\d{2})-(\d{2})/);
+  if(m){ if(m[1]==='1899') return ''; return m[3]+'/'+m[2]+'/'+m[1]; }
+  return s;
+}
+function parseDatePt(s){
+  if(!s) return null;
+  const m=s.match(/^(\d{2})\/(\d{2})\/(\d{4})$/);
+  if(!m) return null;
+  return new Date(+m[3],+m[2]-1,+m[1]);
+}
+function diffDays(dateStr){
+  const d=parseDatePt(dateStr);
+  if(!d) return null;
+  return Math.ceil((d-new Date())/86400000);
+}
+function esc(str){ return String(str||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+function escAttr(str){ return String(str||'').replace(/"/g,'&quot;').replace(/'/g,'&#39;'); }
+
+const SVG = {
+  edit: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/></svg>`,
+  archive: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="3" width="20" height="5" rx="1"/><path d="M4 8v11a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8"/><path d="M10 12h4"/></svg>`,
+  trash: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/><path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/></svg>`
+};
+const SVG_RESTORE = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="1 4 1 10 7 10"/><path d="M3.51 15a9 9 0 1 0 .49-4.5"/></svg>`;
+
+function actionBtns(tipo, id){
+  const abaMap={tarefa:'tarefas',audiencia:'audiencias',processo:'processos',demanda:'demandas',delegacao:'delegacoes'};
+  const aba = abaMap[tipo];
+  return `<div class="action-btns">
+    <button class="btn-icon" data-tip="Editar" data-action="edit" data-tipo="${tipo}" data-id="${id}">${SVG.edit}</button>
+    <button class="btn-icon warn" data-tip="Arquivar" data-action="archive" data-aba="${aba}" data-id="${id}">${SVG.archive}</button>
+    <button class="btn-icon danger" data-tip="Excluir" data-action="delete" data-aba="${aba}" data-id="${id}">${SVG.trash}</button>
+  </div>`;
+}
+
+document.addEventListener('click', function(e){
+  const btn = e.target.closest('[data-action]');
+  if(!btn) return;
+  const action=btn.dataset.action, id=btn.dataset.id, aba=btn.dataset.aba, tipo=btn.dataset.tipo;
+  if(action==='edit') openModalItem(tipo, id);
+  else if(action==='archive') arquivar(aba, id);
+  else if(action==='delete') deleteItem(aba, id);
+});
+
+function tagSituacao(sit){
+  const map={'concluido':'tag-green','concluído':'tag-green','realizada':'tag-green','agendada':'tag-blue','em_andamento':'tag-blue','em andamento':'tag-blue','iniciado':'tag-blue','em_monitoramento':'tag-blue','pendente':'tag-amber','aguardando_confirmacao':'tag-amber','aguardando_retorno':'tag-amber','aguardando_execucao':'tag-amber','aguardando_procuracoes':'tag-amber','aguardando':'tag-amber','delegado':'tag-purple','cancelada':'tag-red','em_acompanhamento':'tag-blue','redesignada':'tag-amber'};
+  const labels={'concluido':'Concluído ✔️','concluído':'Concluído ✔️','realizada':'Realizada ✔️','agendada':'Agendada','em_andamento':'Em andamento','iniciado':'Iniciado','em_monitoramento':'Em monitoramento','pendente':'Pendente','aguardando_confirmacao':'Aguard. confirmação','aguardando_retorno':'Aguard. retorno','aguardando_execucao':'Aguard. execução','aguardando_procuracoes':'Aguard. procurações','aguardando':'Aguardando','delegado':'Delegado à Mara','cancelada':'Cancelada','em_acompanhamento':'Em acompanhamento','redesignada':'Redesignada'};
+  const k=String(sit||'').toLowerCase();
+  return `<span class="tag ${map[k]||'tag-gray'}">${esc(labels[k]||sit||'—')}</span>`;
+}
+function tagPrio(p){
+  if(p==='vermelho') return '<span class="tag tag-red">🔴 Alta</span>';
+  if(p==='amarelo') return '<span class="tag tag-amber">🟡 Média</span>';
+  if(p==='verde') return '<span class="tag tag-green">🟢 Baixa</span>';
+  return '';
+}
+function numProcesso(n){
+  if(!n) return '<span style="color:#d1d1d6">—</span>';
+  return `<span class="num-processo" onclick="abrirPainelProcesso('${escAttr(n)}')" title="Clique para ver ou cadastrar">${esc(n)}</span>`;
+}
+function isConcluido(sit){ return ['concluido','concluído','realizada'].includes(String(sit||'').toLowerCase()); }
+function escritorioLabel(e){ return (ESCRITORIOS[e]||{label:e}).label; }
+
+// ============================================================
+// TABS & RENDER
+// ============================================================
+function showTab(tab){
+  document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));
+  document.querySelectorAll('.section').forEach(s=>s.classList.remove('active'));
+  const tabEl=document.querySelector(`.tab[data-tab="${tab}"]`);
+  if(tabEl) tabEl.classList.add('active');
+  const sec=document.getElementById('sec-'+tab);
+  if(sec) sec.classList.add('active');
+  const renders={dashboard:renderDashboard,tarefas:renderTarefas,audiencias:renderAudiencias,processos:renderProcessos,demandas:renderDemandas,delegacoes:renderDelegacoes,oab:renderOAB,arquivo:renderArquivo};
+  if(renders[tab]) renders[tab]();
+}
+
+function render(){
+  renderDashboard();
+  atualizarBadgeLixeira();
+  const active=document.querySelector('.tab.active');
+  if(active&&active.dataset.tab!=='dashboard'){
+    const renders={tarefas:renderTarefas,audiencias:renderAudiencias,processos:renderProcessos,delegacoes:renderDelegacoes,oab:renderOAB,arquivo:renderArquivo,lixeira:renderLixeira};
+    const fn=renders[active.dataset.tab];
+    if(fn) fn();
+  }
+}
+
+function setPill(section, value, el){
+  filters[section]=value;
+  document.querySelectorAll(`#pills-${section} .pill`).forEach(p=>p.classList.remove('active'));
+  el.classList.add('active');
+  const renders={tarefas:renderTarefas,audiencias:renderAudiencias,processos:renderProcessos,demandas:renderDemandas};
+  if(renders[section]) renders[section]();
+}
+
+// ============================================================
+// DASHBOARD
+// ============================================================
+function renderDashboard(){
+  let alertas='';
+  data.audiencias.filter(a=>a.status==='agendada'||a.situacao==='agendada').forEach(a=>{
+    const d=diffDays(a.data);
+    if(d!==null&&d>=0&&d<=3) alertas+=`<div class="alert-fatal">⚠️ <strong>${esc(a.tipo)}</strong> — ${esc(a.cliente||'')} — em <strong>${d===0?'HOJE':d+' dia(s)'}</strong> (${esc(a.data)} ${esc(a.hora||'')})</div>`;
+  });
+  // Alertas de eventos OAB próximos
+  (data.oab||[]).filter(o=>o.tipo==='evento'&&o.status!=='realizado'&&o.status!=='cancelado').forEach(o=>{
+    const d=diffDays(o.data);
+    if(d!==null&&d>=0&&d<=3) alertas+=`<div class="alert-amber">📋 OAB — <strong>${esc(o.titulo)}</strong> (${esc(OAB_DIVS[o.divisao]?.label||o.divisao)}) em <strong>${d===0?'HOJE':d+' dia(s)'}</strong></div>`;
+  });
+  data.demandas.filter(d=>!isConcluido(d.situacao)&&d.prazo).forEach(d=>{
+    const df=diffDays(d.prazo);
+    if(df!==null&&df>=0&&df<=3) alertas+=`<div class="alert-fatal">🔥 Demanda: <strong>${esc(d.atividade)}</strong> — prazo em <strong>${df===0?'HOJE':df+' dia(s)'}</strong></div>`;
+  });
+  document.getElementById('alertas-container').innerHTML=alertas;
+
+  const tots={
+    tarefas:data.tarefas.filter(t=>!isConcluido(t.situacao)).length,
+    audiencias:data.audiencias.filter(a=>!isConcluido(a.status||a.situacao)).length,
+    processos:data.processos.length,
+    demandas:data.demandas.filter(d=>!isConcluido(d.situacao)).length,
+    delegacoes:data.delegacoes.filter(d=>!isConcluido(d.situacao)).length,
+    oabEventos:(data.oab||[]).filter(o=>o.tipo==='evento'&&o.status==='agendado').length
+  };
+  document.getElementById('stat-cards').innerHTML=`
+    <div class="stat-card s-amber" onclick="showTab('tarefas')"><div class="stat-num">${tots.tarefas}</div><div class="stat-label">Tarefas abertas</div></div>
+    <div class="stat-card s-blue" onclick="showTab('audiencias')"><div class="stat-num">${tots.audiencias}</div><div class="stat-label">Audiências ativas</div></div>
+    <div class="stat-card" onclick="showTab('processos')"><div class="stat-num">${tots.processos}</div><div class="stat-label">Processos</div></div>
+    <div class="stat-card s-red" onclick="showTab('tarefas')"><div class="stat-num">${tots.demandas}</div><div class="stat-label">Demandas abertas</div></div>
+    <div class="stat-card s-green" onclick="showTab('delegacoes')"><div class="stat-num">${tots.delegacoes}</div><div class="stat-label">Delegações ativas</div></div>
+    <div class="stat-card s-purple" onclick="showTab('arquivo')"><div class="stat-num">${data.arquivo.length}</div><div class="stat-label">Arquivados</div></div>
+    <div class="stat-card s-amber" onclick="showTab('oab')"><div class="stat-num">${tots.oabEventos}</div><div class="stat-label">Eventos OAB agendados</div></div>
+  `;
+
+  const proximas=data.audiencias.filter(a=>{ const d=diffDays(a.data); return d!==null&&d>=-30&&d<=60&&a.status!=='realizada'; }).sort((a,b)=>parseDatePt(a.data)-parseDatePt(b.data));
+  if(!proximas.length) document.getElementById('dash-proximas').innerHTML='<div class="empty-state"><div class="emoji">📅</div>Nenhuma audiência nos próximos 30 dias</div>';
+  else {
+    let h='<div class="tbl-wrap"><table><thead><tr><th>Data</th><th>Hora</th><th>Tipo</th><th>Cliente</th><th>Processo</th><th>Escritório</th><th>Status</th></tr></thead><tbody>';
+    proximas.forEach(a=>{
+      const d=diffDays(a.data);
+      h+=`<tr><td>${esc(a.data)}${d===0?' <span class="tag tag-red">HOJE</span>':d<=2?' <span class="tag tag-amber">Em breve</span>':''}</td><td>${esc(a.hora||'—')}</td><td>${esc(a.tipo||'—')}</td><td>${esc(a.cliente||'—')}</td><td>${numProcesso(a.processo)}</td><td><span style="font-size:11px">${esc(escritorioLabel(a.escritorio))}</span></td><td>${tagSituacao(a.status||a.situacao)}</td></tr>`;
+    });
+    h+='</tbody></table></div>';
+    document.getElementById('dash-proximas').innerHTML=h;
+  }
+
+  const urgTar=data.tarefas.filter(t=>t.prioridade==='vermelho'&&!isConcluido(t.situacao));
+  const urgDem=data.demandas.filter(d=>d.prioridade==='vermelho'&&!isConcluido(d.situacao));
+  if(!urgTar.length&&!urgDem.length) document.getElementById('dash-urgentes').innerHTML='<div class="empty-state"><div class="emoji">✅</div>Nenhuma tarefa ou demanda de alta prioridade</div>';
+  else {
+    let h='<div class="tbl-wrap"><table><thead><tr><th>Tipo</th><th>Escritório</th><th>Atividade</th><th>Processo</th><th>Situação</th></tr></thead><tbody>';
+    urgTar.forEach(t=>{ h+=`<tr><td><span class="tag tag-blue">Tarefa</span></td><td><span style="font-size:11px">${esc(escritorioLabel(t.escritorio))}</span></td><td>${esc(t.atividade)}</td><td>${numProcesso(t.processo)}</td><td>${tagSituacao(t.situacao)}</td></tr>`; });
+    urgDem.forEach(d=>{ h+=`<tr><td><span class="tag tag-purple">Demanda</span></td><td><span style="font-size:11px">${esc(escritorioLabel(d.escritorio))}</span></td><td>${esc(d.atividade)}</td><td>${numProcesso(d.processo)}</td><td>${tagSituacao(d.situacao)}</td></tr>`; });
+    h+='</tbody></table></div>';
+    document.getElementById('dash-urgentes').innerHTML=h;
+  }
+
+  const delPend=data.delegacoes.filter(d=>!isConcluido(d.situacao));
+  if(!delPend.length) document.getElementById('dash-delegacoes').innerHTML='<div class="empty-state"><div class="emoji">✅</div>Nenhuma delegação pendente</div>';
+  else {
+    let h='<div class="tbl-wrap"><table><thead><tr><th>Atividade</th><th>Processo</th><th>Situação</th><th>Prioridade</th></tr></thead><tbody>';
+    delPend.forEach(d=>{ h+=`<tr><td>${esc(d.atividade)}</td><td>${numProcesso(d.processo)}</td><td>${tagSituacao(d.situacao)}</td><td>${tagPrio(d.prioridade)}</td></tr>`; });
+    h+='</tbody></table></div>';
+    document.getElementById('dash-delegacoes').innerHTML=h;
+  }
+}
+
+// ============================================================
+// OAB — FUNÇÕES
+// ============================================================
+function toggleOabDiv(div){
+  const body=document.getElementById('body-oab-'+div);
+  const chev=document.getElementById('chev-oab-'+div);
+  if(!body) return;
+  body.classList.toggle('open');
+  chev.classList.toggle('open');
+}
+
+function renderOAB(){
+  if(!Array.isArray(data.oab)) data.oab=[];
+  ['licitacoes','escola','geral'].forEach(div=>{
+    const items=data.oab.filter(x=>x.divisao===div);
+    const tarefas=items.filter(x=>x.tipo==='tarefa').sort((a,b)=>{
+      const da=parseDatePt(a.prazo), db=parseDatePt(b.prazo);
+      if(da&&db) return da-db; if(da) return -1; if(db) return 1; return 0;
+    });
+    const eventos=items.filter(x=>x.tipo==='evento').sort((a,b)=>{
+      const da=parseDatePt(a.data), db=parseDatePt(b.data);
+      if(da&&db) return da-db; if(da) return -1; if(db) return 1; return 0;
+    });
+    let html='';
+
+    if(tarefas.length){
+      html+='<div class="sec-label">📋 Tarefas</div>';
+      html+='<div class="tbl-wrap" style="margin-bottom:14px"><table><thead><tr><th style="width:36px">✔</th><th>Título</th><th>Prazo</th><th>Situação</th><th>Prioridade</th><th>Ações</th></tr></thead><tbody>';
+      tarefas.forEach(t=>{
+        const conc=t.status==='concluido';
+        const d=diffDays(t.prazo);
+        const dTag=(!conc&&d!==null&&d>=0&&d<=3)?(d===0?'<span class="tag tag-red">HOJE</span>':'<span class="tag tag-amber">Breve</span>'):'';
+        const strike=conc?'text-decoration:line-through;color:#aaa;opacity:.6':'';
+        html+=`<tr>
+          <td style="text-align:center"><input type="checkbox" ${conc?'checked':''} style="width:16px;height:16px;cursor:pointer;accent-color:#34c759" onchange="toggleOABTarefaConcluida('${t.id}',this.checked)"></td>
+          <td style="${strike}"><strong>${esc(t.titulo)}</strong>${t.obs?'<br><span style="font-size:11px;color:#6e6e73">'+esc(t.obs.substring(0,80))+(t.obs.length>80?'…':'')+'</span>':''}</td>
+          <td>${esc(t.prazo||'—')} ${dTag}</td>
+          <td>${tagOABStatus(t.status,'tarefa')}</td>
+          <td>${tagPrio(t.prioridade)}</td>
+          <td><div class="action-btns">
+            <button class="btn-icon" data-tip="Editar" onclick="openModalOAB('${div}','tarefa','${t.id}')">${SVG.edit}</button>
+            <button class="btn-icon danger" data-tip="Excluir" onclick="deleteOABItem('${t.id}')">${SVG.trash}</button>
+          </div></td>
+        </tr>`;
+      });
+      html+='</tbody></table></div>';
+    }
+
+    if(eventos.length){
+      html+='<div class="sec-label">📅 Agenda / Eventos</div>';
+      html+='<div class="tbl-wrap" style="margin-bottom:14px"><table><thead><tr><th>Título</th><th>Data</th><th>Hora</th><th>Local</th><th>Status</th><th>Ações</th></tr></thead><tbody>';
+      eventos.forEach(e=>{
+        const d=diffDays(e.data);
+        const dTag=(e.status!=='realizado'&&d!==null&&d>=0&&d<=3)?(d===0?'<span class="tag tag-red">HOJE</span>':'<span class="tag tag-amber">Em breve</span>'):'';
+        const strike=(e.status==='realizado')?'opacity:.5;':'';
+        html+=`<tr style="${strike}">
+          <td><strong>${esc(e.titulo)}</strong>${e.obs?'<br><span style="font-size:11px;color:#6e6e73">'+esc(e.obs.substring(0,80))+(e.obs.length>80?'…':'')+'</span>':''}</td>
+          <td>${esc(e.data||'—')} ${dTag}</td>
+          <td>${esc(e.hora||'—')}</td>
+          <td>${esc(e.local||'—')}</td>
+          <td>${tagOABStatus(e.status,'evento')}</td>
+          <td><div class="action-btns">
+            <button class="btn-icon" data-tip="Editar" onclick="openModalOAB('${div}','evento','${e.id}')">${SVG.edit}</button>
+            <button class="btn-icon danger" data-tip="Excluir" onclick="deleteOABItem('${e.id}')">${SVG.trash}</button>
+          </div></td>
+        </tr>`;
+      });
+      html+='</tbody></table></div>';
+    }
+
+    if(!html) html='<div class="empty-state"><div class="emoji">📋</div>Nenhum item cadastrado. Use os botões acima para adicionar.</div>';
+    const el=document.getElementById('oab-'+div+'-content');
+    if(el) el.innerHTML=html;
+  });
+}
+
+function tagOABStatus(s, tipo){
+  if(tipo==='evento'){
+    const map={agendado:'tag-blue',realizado:'tag-green',cancelado:'tag-red',adiado:'tag-amber'};
+    const lbl={agendado:'Agendado',realizado:'Realizado ✔️',cancelado:'Cancelado',adiado:'Adiado'};
+    return `<span class="tag ${map[s]||'tag-gray'}">${lbl[s]||s||'—'}</span>`;
+  } else {
+    const map={pendente:'tag-amber',em_andamento:'tag-blue',concluido:'tag-green'};
+    const lbl={pendente:'Pendente',em_andamento:'Em andamento',concluido:'Concluído ✔️'};
+    return `<span class="tag ${map[s]||'tag-gray'}">${lbl[s]||s||'—'}</span>`;
+  }
+}
+
+function openModalOAB(divisao, tipo, id){
+  if(!Array.isArray(data.oab)) data.oab=[];
+  const isNew=!id;
+  const divLabel=OAB_DIVS[divisao]?.label||divisao;
+  document.getElementById('modal-oab-title').textContent=(isNew?'Novo ':'Editar ')+(tipo==='evento'?'Evento':'Tarefa')+' — '+divLabel;
+  document.getElementById('oab-item-id').value=id||'';
+  document.getElementById('oab-item-divisao').value=divisao;
+  document.getElementById('oab-item-tipo').value=tipo;
+  document.getElementById('oab-tipo-badge').innerHTML=tipo==='evento'
+    ?'<span class="tag tag-blue">📅 Evento / Reunião</span>'
+    :'<span class="tag tag-amber">📋 Tarefa</span>';
+  document.getElementById('oab-fields-evento').style.display=tipo==='evento'?'':'none';
+  document.getElementById('oab-fields-tarefa').style.display=tipo==='tarefa'?'':'none';
+  document.getElementById('oab-feed-section').style.display=isNew?'none':'';
+  ['oab-titulo','oab-obs','oab-hora','oab-local','oab-data','oab-prazo'].forEach(f=>{ const el=document.getElementById(f); if(el) el.value=''; });
+  document.getElementById('oab-status-evento').value='agendado';
+  document.getElementById('oab-status-tarefa').value='pendente';
+  document.getElementById('oab-prioridade').value='amarelo';
+  if(!isNew){
+    const reg=data.oab.find(x=>x.id===id);
+    if(reg){
+      document.getElementById('oab-titulo').value=reg.titulo||'';
+      document.getElementById('oab-obs').value=reg.obs||'';
+      if(tipo==='evento'){
+        document.getElementById('oab-data').value=reg.data||'';
+        document.getElementById('oab-hora').value=reg.hora||'';
+        document.getElementById('oab-local').value=reg.local||'';
+        document.getElementById('oab-status-evento').value=reg.status||'agendado';
+      } else {
+        document.getElementById('oab-prazo').value=reg.prazo||'';
+        document.getElementById('oab-status-tarefa').value=reg.status||'pendente';
+        document.getElementById('oab-prioridade').value=reg.prioridade||'amarelo';
+      }
+      renderOABFeed(reg.anotacoes||[], id);
+    }
+  }
+  openModal('modal-oab');
+}
+
+function saveOABItem(){
+  if(!Array.isArray(data.oab)) data.oab=[];
+  const id=document.getElementById('oab-item-id').value;
+  const divisao=document.getElementById('oab-item-divisao').value;
+  const tipo=document.getElementById('oab-item-tipo').value;
+  const titulo=document.getElementById('oab-titulo').value.trim();
+  if(!titulo){ alert('Preencha o título!'); return; }
+  const obs=document.getElementById('oab-obs').value;
+  let item;
+  if(tipo==='evento'){
+    item={divisao,tipo,titulo,obs,data:document.getElementById('oab-data').value,hora:document.getElementById('oab-hora').value,local:document.getElementById('oab-local').value.trim(),status:document.getElementById('oab-status-evento').value};
+  } else {
+    item={divisao,tipo,titulo,obs,prazo:document.getElementById('oab-prazo').value,status:document.getElementById('oab-status-tarefa').value,prioridade:document.getElementById('oab-prioridade').value};
+  }
+  if(id){
+    const idx=data.oab.findIndex(x=>x.id===id);
+    if(idx>=0){
+      const old=data.oab[idx];
+      if(old.status!==item.status){
+        if(!old.historico) old.historico=[];
+        old.historico.push({de:old.status,para:item.status,em:now()});
+      }
+      data.oab[idx]={...old,...item};
+    }
+  } else {
+    data.oab.push({id:uid(),...item,anotacoes:[],historico:[]});
+  }
+  saveData('oab');
+  closeModal('modal-oab');
+  renderOAB();
+}
+
+function deleteOABItem(id){
+  if(!confirm('Excluir este item da OAB?')) return;
+  data.oab=data.oab.filter(x=>x.id!==id);
+  saveData('oab');
+  renderOAB();
+}
+
+function toggleOABTarefaConcluida(id, checked){
+  const r=data.oab.find(x=>x.id===id);
+  if(!r) return;
+  const old=r.status;
+  r.status=checked?'concluido':'pendente';
+  if(!r.historico) r.historico=[];
+  r.historico.push({de:old,para:r.status,em:now()});
+  saveData('oab');
+  renderOAB();
+}
+
+function renderOABFeed(anotacoes, regId){
+  const el=document.getElementById('oab-feed-list');
+  if(!el) return;
+  if(!anotacoes.length){ el.innerHTML='<div style="font-size:12px;color:#6e6e73;text-align:center;padding:10px">Nenhuma anotação ainda</div>'; return; }
+  el.innerHTML=[...anotacoes].reverse().map(a=>`
+    <div class="feed-item">
+      <div class="feed-item-header">
+        <span class="feed-ts">🕐 ${esc(a.ts)}</span>
+        <button class="btn btn-red btn-sm" onclick="deleteOABFeed('${a.id}','${regId}')">🗑</button>
+      </div>
+      <div>${esc(a.texto).replace(/\n/g,'<br>')}</div>
+    </div>`).join('');
+}
+
+function addOABFeedItem(){
+  const id=document.getElementById('oab-item-id').value;
+  const input=document.getElementById('oab-feed-input');
+  const txt=input.value.trim();
+  if(!txt||!id) return;
+  const reg=data.oab.find(x=>x.id===id);
+  if(!reg) return;
+  if(!reg.anotacoes) reg.anotacoes=[];
+  reg.anotacoes.push({id:uid(),texto:txt,ts:now()});
+  input.value=''; updateCounter('oab-feed-input','oab-feed-counter');
+  saveData('oab');
+  renderOABFeed(reg.anotacoes, id);
+}
+
+function deleteOABFeed(feedId, regId){
+  if(!confirm('Excluir anotação?')) return;
+  const reg=data.oab.find(x=>x.id===regId);
+  if(!reg) return;
+  reg.anotacoes=reg.anotacoes.filter(x=>x.id!==feedId);
+  saveData('oab');
+  renderOABFeed(reg.anotacoes, regId);
+}
+
+// ============================================================
+// RENDER TAREFAS
+// ============================================================
+function renderTarefas(){
+  const busca=(document.getElementById('busca-tarefas')||{value:''}).value.toLowerCase();
+  const f=filters.tarefas;
+  let lista=data.tarefas.filter(t=>{
+    if(f!=='todos'&&t.escritorio!==f) return false;
+    if(busca&&!t.atividade.toLowerCase().includes(busca)&&!(t.processo||'').toLowerCase().includes(busca)&&!(t.assunto||'').toLowerCase().includes(busca)) return false;
+    return true;
+  });
+  if(!lista.length){ document.getElementById('lista-tarefas').innerHTML='<div class="empty-state"><div class="emoji">📋</div>Nenhuma tarefa encontrada</div>'; return; }
+  lista = sortList(lista, 'tarefas');
+  let html='<div class="tbl-wrap"><table><thead><tr><th style="width:36px">✔</th>'+thSort('tarefas','escritorio','Escritório')+thSort('tarefas','atividade','Atividade')+thSort('tarefas','processo','Processo')+thSort('tarefas','assunto','Assunto')+thSort('tarefas','data','Data')+thSort('tarefas','situacao','Situação')+thSort('tarefas','prioridade','Prioridade')+'<th>Ações</th></tr></thead><tbody>';
+  lista.forEach(t=>{
+    const concluida=t.situacao==='concluido';
+    const nH=(t.historico||[]).length;
+    const rowStyle=concluida?'opacity:.5;':'';
+    const strikeStyle=concluida?'text-decoration:line-through;color:#aaa;':'';
+    const d=diffDays(t.data);
+    const dataTag=(!concluida&&d!==null&&d>=0&&d<=3)?(d===0?'<span class="tag tag-red">HOJE</span>':d<=2?'<span class="tag tag-amber">Em breve</span>':''):'';
+    const maraMatch = t._delegadaMara ? `<br><span class="tag" style="background:#d1fae5;color:#065f46;font-size:10px;cursor:pointer" onclick="showTab('delegacoes')" title="Ver delegação">🤝 Delegado à Mara</span>` : '';
+    html+=`<tr style="${rowStyle}">
+      <td style="text-align:center"><input type="checkbox" ${concluida?'checked':''} title="Marcar como concluída" onchange="toggleTarefaConcluida('${t.id}',this.checked)" style="width:16px;height:16px;cursor:pointer;accent-color:#34c759"></td>
+      <td><span style="font-size:11px;color:#6e6e73">${esc(escritorioLabel(t.escritorio))}</span></td>
+      <td style="${strikeStyle}"><strong>${esc(t.atividade)}</strong>${maraMatch}</td>
+      <td>${numProcesso(t.processo)}</td>
+      <td style="${strikeStyle}">${esc(t.assunto||'—')}</td>
+      <td>${esc(t.data||'—')} ${dataTag}</td>
+      <td>${tagSituacao(t.situacao)}${nH>0?`<br><span style="font-size:10px;color:#6e6e73;cursor:pointer" onclick="showHistorico('${t.id}','tarefas')">↩ ${nH} alt.</span>`:''}
+      </td>
+      <td>${tagPrio(t.prioridade)}</td>
+      <td>${actionBtns('tarefa', t.id)}</td>
+    </tr>`;
+  });
+  html+='</tbody></table></div>';
+  document.getElementById('lista-tarefas').innerHTML=html;
+}
+
+function toggleTarefaConcluida(id, checked){
+  const t=data.tarefas.find(x=>x.id===id);
+  if(!t) return;
+  const old=t.situacao;
+  if(checked){
+    t.situacao='concluido';
+    if(!t.historico) t.historico=[];
+    t.historico.push({de:old, para:'concluido', em:now()});
+    const idx=data.tarefas.findIndex(x=>x.id===id);
+    data.tarefas.splice(idx,1);
+    if(!Array.isArray(data.arquivo)) data.arquivo=[];
+    data.arquivo.push({...t, _aba:'tarefas', _arquivadoEm:now()});
+    saveData('tarefas'); scheduleSync('arquivo');
+  } else {
+    const idxArq=data.arquivo.findIndex(x=>x.id===id);
+    if(idxArq>=0){
+      const r={...data.arquivo[idxArq]};
+      delete r._aba; delete r._arquivadoEm;
+      r.situacao='pendente';
+      if(!r.historico) r.historico=[];
+      r.historico.push({de:'concluido', para:'pendente', em:now()});
+      data.tarefas.push(r);
+      data.arquivo.splice(idxArq,1);
+      saveData('tarefas');
+    }
+  }
+  renderTarefas(); renderArquivo(); renderDashboard();
+}
+
+function renderAudiencias(){
+  const busca=(document.getElementById('busca-audiencias')||{value:''}).value.toLowerCase();
+  const f=filters.audiencias;
+  let lista=data.audiencias.filter(a=>{
+    if(f!=='todos'&&a.escritorio!==f) return false;
+    if(busca&&!(a.cliente||'').toLowerCase().includes(busca)&&!(a.tipo||'').toLowerCase().includes(busca)&&!(a.processo||'').toLowerCase().includes(busca)&&!(a.parte||'').toLowerCase().includes(busca)) return false;
+    return true;
+  }).sort((a,b)=>{ const da=parseDatePt(a.data),db=parseDatePt(b.data); if(!da&&!db)return 0; if(!da)return 1; if(!db)return -1; return da-db; });
+  if(!lista.length){ document.getElementById('lista-audiencias').innerHTML='<div class="empty-state"><div class="emoji">🏛</div>Nenhuma audiência encontrada</div>'; return; }
+  lista = sortList(lista, 'audiencias');
+  let html='<div class="tbl-wrap"><table><thead><tr><th style="width:36px">✔</th>'+thSort('audiencias','tipo','Tipo')+thSort('audiencias','data','Data')+thSort('audiencias','hora','Hora')+thSort('audiencias','cliente','Cliente')+thSort('audiencias','parte','Parte Contrária')+thSort('audiencias','processo','Processo')+thSort('audiencias','assunto','Assunto')+thSort('audiencias','escritorio','Escritório')+'<th>Ações</th></tr></thead><tbody>';
+  lista.forEach(a=>{
+    const realizada=a.status==='realizada';
+    const d=diffDays(a.data);
+    const dTag=(!realizada&&d!==null&&d>=0&&d<=3)?(d===0?'<span class="tag tag-red"> HOJE</span>':'<span class="tag tag-amber"> Em breve</span>'):'';
+    const rowStyle=realizada?'opacity:.5;':'';
+    const strikeStyle=realizada?'text-decoration:line-through;color:#aaa;':'';
+    html+=`<tr style="${rowStyle}">
+      <td style="text-align:center"><input type="checkbox" ${realizada?'checked':''} title="Marcar como realizada" onchange="toggleRealizada('${a.id}',this.checked)" style="width:16px;height:16px;cursor:pointer;accent-color:#34c759"></td>
+      <td style="${strikeStyle}">${esc(a.tipo||'—')}</td>
+      <td style="${strikeStyle}">${esc(formatDate(a.data)||'—')}${dTag}</td>
+      <td>${esc(a.hora||'—')}</td>
+      <td style="${strikeStyle}">${esc(a.cliente||'—')}</td>
+      <td>${esc(a.parte||'—')}</td>
+      <td>${numProcesso(a.processo)}</td>
+      <td>${esc(a.assunto||'—')}</td>
+      <td><span style="font-size:11px;color:#6e6e73">${esc(escritorioLabel(a.escritorio))}</span></td>
+      <td>${actionBtns('audiencia', a.id)}</td>
+    </tr>`;
+  });
+  html+='</tbody></table></div>';
+  document.getElementById('lista-audiencias').innerHTML=html;
+}
+
+function toggleRealizada(id, checked){
+  const a=data.audiencias.find(x=>x.id===id);
+  if(!a) return;
+  const oldStatus=a.status||a.situacao||'agendada';
+  if(checked){
+    a.status='realizada';
+    if(!a.historico) a.historico=[];
+    a.historico.push({de:oldStatus, para:'realizada', em:now()});
+    const idx=data.audiencias.findIndex(x=>x.id===id);
+    data.audiencias.splice(idx,1);
+    if(!Array.isArray(data.arquivo)) data.arquivo=[];
+    data.arquivo.push({...a, _aba:'audiencias', _arquivadoEm:now()});
+    saveData('audiencias'); scheduleSync('arquivo');
+  } else {
+    const idxArq=data.arquivo.findIndex(x=>x.id===id);
+    if(idxArq>=0){
+      const r={...data.arquivo[idxArq]};
+      delete r._aba; delete r._arquivadoEm;
+      r.status='agendada';
+      if(!r.historico) r.historico=[];
+      r.historico.push({de:'realizada', para:'agendada', em:now()});
+      data.audiencias.push(r);
+      data.arquivo.splice(idxArq,1);
+      saveData('audiencias');
+    }
+  }
+  renderAudiencias(); renderArquivo(); renderDashboard();
+}
+
+function renderProcessos(){
+  const busca=(document.getElementById('busca-processos')||{value:''}).value.toLowerCase();
+  const f=filters.processos;
+  const escritorios=['principal','pai','mariana','jessica','dativa','andre','felipe'];
+  const total=data.processos.length;
+  const contEl=document.getElementById('processos-contadores');
+  if(contEl){
+    const cores={principal:'#1a56db',pai:'#0e7490',mariana:'#7c3aed',jessica:'#be185d',dativa:'#b45309',andre:'#0f766e',felipe:'#7e22ce'};
+    let ctHtml=`<div style="background:#f0f7ff;border:0.5px solid #bfdbfe;border-radius:10px;padding:8px 14px;display:flex;align-items:center;gap:6px;font-size:13px"><span style="font-weight:700;font-size:20px;color:#1a56db">${total}</span><span style="color:#6e6e73">processo${total!==1?'s':''} no total</span></div>`;
+    escritorios.forEach(e=>{
+      const n=data.processos.filter(p=>p.escritorio===e).length;
+      if(!n) return;
+      const cor=cores[e]||'#666';
+      ctHtml+=`<div onclick="setPillProcessos('${e}')" style="background:#fff;border:0.5px solid #e5e5ea;border-radius:10px;padding:8px 14px;display:flex;align-items:center;gap:8px;font-size:13px;cursor:pointer;transition:all .15s" onmouseenter="this.style.borderColor='${cor}';this.style.background='#f9f9ff'" onmouseleave="this.style.borderColor='#e5e5ea';this.style.background='#fff'"><span style="font-weight:700;font-size:20px;color:${cor}">${n}</span><span style="color:#6e6e73;font-size:12px">${esc(escritorioLabel(e))}</span></div>`;
+    });
+    contEl.innerHTML=ctHtml;
+  }
+  let lista=data.processos.filter(p=>{
+    if(f!=='todos'&&p.escritorio!==f) return false;
+    if(busca&&!(p.cliente||'').toLowerCase().includes(busca)&&!(p.numero||'').toLowerCase().includes(busca)&&!(p.assunto||'').toLowerCase().includes(busca)&&!(p.parte||'').toLowerCase().includes(busca)) return false;
+    return true;
+  });
+  const filtroInfo = f!=='todos'&&!busca?`<div style="font-size:12px;color:#6e6e73;margin-bottom:10px">Mostrando <strong>${lista.length}</strong> processo${lista.length!==1?'s':''} de <strong>${esc(escritorioLabel(f))}</strong></div>`:busca?`<div style="font-size:12px;color:#6e6e73;margin-bottom:10px"><strong>${lista.length}</strong> resultado${lista.length!==1?'s':''} para "<strong>${esc(busca)}</strong>"</div>`:'';
+  if(!lista.length){ document.getElementById('lista-processos').innerHTML=filtroInfo+'<div class="empty-state"><div class="emoji">📁</div>Nenhum processo encontrado</div>'; return; }
+  lista = sortList(lista, 'processos');
+  let html=filtroInfo+'<div class="tbl-wrap"><table><thead><tr>'+thSort('processos','cliente','Cliente')+thSort('processos','parte','Parte Contrária')+thSort('processos','numero','Número do Processo')+thSort('processos','assunto','Assunto')+thSort('processos','situacao','Situação')+thSort('processos','vara','Vara/Tribunal')+thSort('processos','escritorio','Escritório')+'<th>Ações</th></tr></thead><tbody>';
+  lista.forEach(p=>{
+    html+=`<tr><td><strong>${esc(p.cliente||'—')}</strong></td><td>${esc(p.parte||'—')}</td><td>${numProcesso(p.numero)}</td><td>${esc(p.assunto||'—')}</td><td>${esc(p.situacao||'—')}</td><td>${esc(p.vara||'—')}</td><td><span style="font-size:11px;color:#6e6e73">${esc(escritorioLabel(p.escritorio))}</span></td><td><div class="action-btns">${actionBtns('processo', p.id)}</div></td></tr>`;
+  });
+  html+='</tbody></table></div>';
+  document.getElementById('lista-processos').innerHTML=html;
+}
+
+function setPillProcessos(escritorio){
+  filters.processos=escritorio;
+  document.querySelectorAll('#pills-processos .pill').forEach(p=>p.classList.remove('active'));
+  const pill=[...document.querySelectorAll('#pills-processos .pill')].find(p=>p.getAttribute('onclick')&&p.getAttribute('onclick').includes("'"+escritorio+"'"));
+  if(pill) pill.classList.add('active');
+  renderProcessos();
+}
+
+function renderDemandas(){
+  const busca=(document.getElementById('busca-demandas')||{value:''}).value.toLowerCase();
+  const f=filters.demandas;
+  let lista=data.demandas.filter(d=>{
+    if(f!=='todos'&&d.escritorio!==f) return false;
+    if(busca&&!d.atividade.toLowerCase().includes(busca)&&!(d.processo||'').toLowerCase().includes(busca)) return false;
+    return true;
+  });
+  if(!lista.length){ document.getElementById('lista-demandas').innerHTML='<div class="empty-state"><div class="emoji">⚙️</div>Nenhuma demanda encontrada</div>'; return; }
+  let html='<div class="tbl-wrap"><table><thead><tr><th>Escritório</th><th>Atividade</th><th>Processo</th><th>Assunto</th><th>Prazo</th><th>Situação</th><th>Prioridade</th><th>Ações</th></tr></thead><tbody>';
+  lista.forEach(d=>{
+    const df=diffDays(d.prazo);
+    const prazoTag=(df!==null&&df>=0&&df<=3&&!isConcluido(d.situacao))?(df===0?'<span class="tag tag-red">HOJE</span>':'<span class="tag tag-amber">Breve</span>'):'';
+    html+=`<tr><td><span style="font-size:11px;color:#6e6e73">${esc(escritorioLabel(d.escritorio))}</span></td><td>${esc(d.atividade)}</td><td>${numProcesso(d.processo)}</td><td>${esc(d.assunto||'—')}</td><td>${esc(d.prazo||'—')} ${prazoTag}</td><td>${tagSituacao(d.situacao)}</td><td>${tagPrio(d.prioridade)}</td><td><div class="action-btns">${actionBtns('demanda', d.id)}</div></td></tr>`;
+  });
+  html+='</tbody></table></div>';
+  document.getElementById('lista-demandas').innerHTML=html;
+}
+
+function renderDelegacoes(){
+  if(!data.delegacoes.length){ document.getElementById('lista-delegacoes').innerHTML='<div class="empty-state"><div class="emoji">🤝</div>Nenhuma delegação cadastrada</div>'; return; }
+  const listaDel = sortList([...data.delegacoes], 'delegacoes');
+  let html='<div class="tbl-wrap"><table><thead><tr><th style="width:36px">✔</th>'+thSort('delegacoes','atividade','Atividade')+thSort('delegacoes','processo','Número do Processo')+thSort('delegacoes','data','Data')+'<th>Vinculado</th>'+thSort('delegacoes','situacao','Situação')+thSort('delegacoes','prioridade','Prioridade')+'<th>Ações</th></tr></thead><tbody>';
+  listaDel.forEach(d=>{
+    const concluida=d.situacao==='concluido';
+    const rowStyle=concluida?'opacity:.5;':'';
+    const strikeStyle=concluida?'text-decoration:line-through;color:#aaa;':'';
+    const vinculadoLabels={principal:'Principal',pai:'Pai',mariana:'Mariana',jessica:'Jéssica',dativa:'Dativos',andre:'André',felipe:'Felipe',outro:'Outro'};
+    const vinTag=d.vinculado?`<span class="tag tag-gray">${vinculadoLabels[d.vinculado]||esc(d.vinculado)}</span>`:'<span style="color:#d1d1d6">—</span>';
+    html+=`<tr style="${rowStyle}">
+      <td style="text-align:center"><input type="checkbox" ${concluida?'checked':''} title="Marcar como concluída" onchange="toggleDelegacaoConcluida('${d.id}',this.checked)" style="width:16px;height:16px;cursor:pointer;accent-color:#34c759"></td>
+      <td style="${strikeStyle}">${esc(d.atividade)}</td>
+      <td>${numProcesso(d.processo)}</td>
+      <td>${esc(d.data||'—')}</td>
+      <td>${vinTag}</td>
+      <td>${tagSituacao(d.situacao)}</td>
+      <td>${tagPrio(d.prioridade)}</td>
+      <td><div class="action-btns">${actionBtns('delegacao', d.id)}</div></td>
+    </tr>`;
+  });
+  html+='</tbody></table></div>';
+  document.getElementById('lista-delegacoes').innerHTML=html;
+}
+
+function toggleDelegacaoConcluida(id, checked){
+  const d=data.delegacoes.find(x=>x.id===id);
+  if(!d) return;
+  const old=d.situacao;
+  d.situacao=checked?'concluido':'aguardando_retorno';
+  if(!d.historico) d.historico=[];
+  d.historico.push({de:old, para:d.situacao, em:now()});
+  saveData('delegacoes'); renderDelegacoes(); renderDashboard();
+}
+
+function renderArquivo(){
+  if(!data.arquivo.length){ document.getElementById('lista-arquivo').innerHTML='<div class="empty-state"><div class="emoji">📦</div>Nenhum registro arquivado</div>'; return; }
+  let html='';
+  data.arquivo.forEach(r=>{
+    const label=r.atividade||r.cliente||r.tipo||r.desc||'—';
+    const tipoMap={tarefas:'📋 Tarefa',audiencias:'🏛 Audiência',processos:'📁 Processo',demandas:'⚙️ Demanda',delegacoes:'🤝 Delegação'};
+    const tipoLabel=tipoMap[r._aba]||r._aba||'Registro';
+    html+=`<div class="arquivo-card"><div style="display:flex;justify-content:space-between;align-items:flex-start;flex-wrap:wrap;gap:8px"><div><span class="tag tag-amber">${tipoLabel}</span><span style="font-size:11px;color:#6e6e73;margin-left:6px">${esc(escritorioLabel(r.escritorio))}</span><strong style="font-size:14px;margin-left:8px">${esc(label)}</strong>${r.processo?`<div class="num-processo" style="margin-top:3px">${esc(r.processo||r.numero||'')}</div>`:''}<div style="font-size:11px;color:#6e6e73;margin-top:3px">Arquivado em ${esc(r._arquivadoEm||'')}</div></div><div class="action-btns"><button class="btn btn-green btn-sm" onclick="restaurar('${r.id}')">↩ Restaurar</button><button class="btn btn-red btn-sm" onclick="excluirArquivo('${r.id}')">🗑 Excluir</button></div></div></div>`;
+  });
+  document.getElementById('lista-arquivo').innerHTML=html;
+}
+
+// ============================================================
+// MODAL UNIVERSAL
+// ============================================================
+function openModalItem(tipo, id){
+  _editCtx={tipo, id:id||null};
+  const isNew=!id;
+  const titles={tarefa:'Tarefa',audiencia:'Audiência / Ato',processo:'Processo',demanda:'Demanda Operacional',delegacao:'Delegação Mara'};
+  document.getElementById('modal-item-title').textContent=(isNew?'Nova ':'Editar ')+titles[tipo];
+  document.getElementById('item-id').value=id||'';
+  document.getElementById('item-tipo').value=tipo;
+  document.getElementById('btn-arquivar-item').style.display=isNew?'none':'inline-block';
+  document.querySelectorAll('.item-fields').forEach(f=>f.style.display='none');
+  document.getElementById('fields-'+tipo).style.display='block';
+  document.getElementById('item-escritorio').style.display=tipo==='delegacao'?'none':'block';
+  document.getElementById('item-escritorio').closest('.form-row').style.display=tipo==='delegacao'?'none':'flex';
+  document.getElementById('item-feed-section').style.display=isNew?'none':'block';
+  if(isNew){ clearFields(tipo); }
+  else {
+    const aba=tipoToAba(tipo);
+    const reg=data[aba].find(x=>x.id===id);
+    if(!reg) return;
+    fillFields(tipo,reg);
+    renderFeedModal(reg.anotacoes||[], aba, id);
+    renderHistBlock('item-hist-block', reg.historico||[]);
+    const maraWarningEl=document.getElementById('mara-warning-modal');
+    if(reg._delegadaMara && maraWarningEl){
+      const del=data.delegacoes.find(d=>reg._delegadaMaraId&&d.id===reg._delegadaMaraId);
+      const delLabel=del?esc(del.atividade):'ver Delegações Mara';
+      maraWarningEl.style.display='block';
+      maraWarningEl.innerHTML=`<div style="background:#d1fae5;border:0.5px solid #6ee7b7;border-radius:10px;padding:10px 14px;font-size:12px;color:#065f46;display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:12px"><span>🤝 <strong>Delegado à Mara</strong> — "${delLabel}"</span><button class="btn btn-sm" style="background:#fff;border:0.5px solid #6ee7b7;color:#065f46;white-space:nowrap" onclick="showTab('delegacoes');closeModal('modal-item')">Ver delegação</button></div>`;
+    } else if(maraWarningEl){ maraWarningEl.style.display='none'; maraWarningEl.innerHTML=''; }
+  }
+  resetVinculos();
+  openModal('modal-item');
+}
+
+function tipoToAba(tipo){ return {tarefa:'tarefas',audiencia:'audiencias',processo:'processos',demanda:'demandas',delegacao:'delegacoes'}[tipo]; }
+
+function toggleVinculo(tipo){
+  const divT=document.getElementById('vinculo-tarefa');
+  const divA=document.getElementById('vinculo-audiencia');
+  if(tipo==='tarefa'){ const show=divT.style.display==='none'; divT.style.display=show?'':'none'; if(show) setTimeout(()=>document.getElementById('vt-atividade').focus(),50); }
+  else { const show=divA.style.display==='none'; divA.style.display=show?'':'none'; }
+}
+
+function resetVinculos(){
+  const divT=document.getElementById('vinculo-tarefa');
+  const divA=document.getElementById('vinculo-audiencia');
+  if(divT){ divT.style.display='none'; document.getElementById('vt-atividade').value=''; document.getElementById('vt-prazo').value=''; document.getElementById('vt-situacao').value='pendente'; document.getElementById('vt-prioridade').value='vermelho'; }
+  if(divA){ divA.style.display='none'; document.getElementById('va-tipo').value='AIJ'; document.getElementById('va-data').value=''; document.getElementById('va-hora').value=''; document.getElementById('va-local').value=''; document.getElementById('va-status').value='agendada'; }
+}
+
+function criarVinculosDoProcesso(proc){
+  const abas=[];
+  const divT=document.getElementById('vinculo-tarefa');
+  if(divT&&divT.style.display!=='none'){
+    const ativ=document.getElementById('vt-atividade').value.trim();
+    if(ativ){ data.tarefas.push({id:uid(),escritorio:proc.escritorio||'principal',atividade:ativ,processo:proc.numero||'',assunto:proc.assunto||'',situacao:document.getElementById('vt-situacao').value,prioridade:document.getElementById('vt-prioridade').value,data:document.getElementById('vt-prazo').value,obs:'',anotacoes:[],historico:[]}); abas.push('tarefas'); }
+  }
+  const divA=document.getElementById('vinculo-audiencia');
+  if(divA&&divA.style.display!=='none'){
+    const dt=document.getElementById('va-data').value;
+    if(dt){ data.audiencias.push({id:uid(),escritorio:proc.escritorio||'principal',tipo:document.getElementById('va-tipo').value,processo:proc.numero||'',cliente:proc.cliente||'',parte:proc.parte||'',assunto:proc.assunto||'',data:dt,hora:document.getElementById('va-hora').value,local:document.getElementById('va-local').value.trim(),status:document.getElementById('va-status').value,obs:'',anotacoes:[],historico:[]}); abas.push('audiencias'); }
+  }
+  return abas;
+}
+
+function clearFields(tipo){
+  document.getElementById('item-escritorio').value='principal';
+  const sets={
+    tarefa:()=>{ ['tar-atividade','tar-processo','tar-assunto','tar-obs','tar-data'].forEach(f=>document.getElementById(f).value=''); document.getElementById('tar-situacao').value='pendente'; document.getElementById('tar-prioridade').value='vermelho'; },
+    audiencia:()=>{ ['aud-processo','aud-cliente','aud-parte','aud-assunto','aud-data','aud-hora','aud-local','aud-obs'].forEach(f=>document.getElementById(f).value=''); document.getElementById('aud-tipo').value='AIJ'; document.getElementById('aud-status').value='agendada'; },
+    processo:()=>{ ['proc-cliente','proc-parte','proc-numero','proc-assunto','proc-situacao','proc-vara','proc-obs'].forEach(f=>document.getElementById(f).value=''); },
+    demanda:()=>{ ['dem-atividade','dem-processo','dem-assunto','dem-prazo','dem-obs'].forEach(f=>document.getElementById(f).value=''); document.getElementById('dem-situacao').value='pendente'; document.getElementById('dem-prioridade').value='vermelho'; },
+    delegacao:()=>{ ['del-atividade','del-processo','del-obs','del-data'].forEach(f=>document.getElementById(f).value=''); document.getElementById('del-situacao').value='aguardando_retorno'; document.getElementById('del-vinculado').value=''; document.getElementById('del-prioridade').value='vermelho'; }
+  };
+  if(sets[tipo]) sets[tipo]();
+}
+
+function fillFields(tipo, r){
+  document.getElementById('item-escritorio').value=r.escritorio||'principal';
+  const sets={
+    tarefa:()=>{ document.getElementById('tar-atividade').value=r.atividade||''; document.getElementById('tar-processo').value=r.processo||''; document.getElementById('tar-assunto').value=r.assunto||''; document.getElementById('tar-situacao').value=r.situacao||'pendente'; document.getElementById('tar-prioridade').value=r.prioridade||'vermelho'; document.getElementById('tar-data').value=r.data||''; document.getElementById('tar-obs').value=r.obs||''; },
+    audiencia:()=>{ document.getElementById('aud-tipo').value=r.tipo||'AIJ'; document.getElementById('aud-processo').value=r.processo||''; document.getElementById('aud-cliente').value=r.cliente||''; document.getElementById('aud-parte').value=r.parte||''; document.getElementById('aud-assunto').value=r.assunto||''; document.getElementById('aud-data').value=r.data||''; document.getElementById('aud-hora').value=r.hora||''; document.getElementById('aud-local').value=r.local||''; document.getElementById('aud-obs').value=r.obs||''; document.getElementById('aud-status').value=r.status||r.situacao||'agendada'; },
+    processo:()=>{ document.getElementById('proc-cliente').value=r.cliente||''; document.getElementById('proc-parte').value=r.parte||''; document.getElementById('proc-numero').value=r.numero||''; document.getElementById('proc-assunto').value=r.assunto||''; document.getElementById('proc-situacao').value=r.situacao||''; document.getElementById('proc-vara').value=r.vara||''; document.getElementById('proc-obs').value=r.obs||''; },
+    demanda:()=>{ document.getElementById('dem-atividade').value=r.atividade||''; document.getElementById('dem-processo').value=r.processo||''; document.getElementById('dem-assunto').value=r.assunto||''; document.getElementById('dem-prazo').value=r.prazo||''; document.getElementById('dem-situacao').value=r.situacao||'pendente'; document.getElementById('dem-prioridade').value=r.prioridade||'vermelho'; document.getElementById('dem-obs').value=r.obs||''; },
+    delegacao:()=>{ document.getElementById('del-atividade').value=r.atividade||''; document.getElementById('del-processo').value=r.processo||''; document.getElementById('del-situacao').value=r.situacao||'aguardando_retorno'; document.getElementById('del-vinculado').value=r.vinculado||''; document.getElementById('del-prioridade').value=r.prioridade||'vermelho'; document.getElementById('del-data').value=r.data||''; document.getElementById('del-obs').value=r.obs||''; }
+  };
+  if(sets[tipo]) sets[tipo]();
+}
+
+function saveItem(){
+  const tipo=document.getElementById('item-tipo').value;
+  const id=document.getElementById('item-id').value;
+  const aba=tipoToAba(tipo);
+  const escritorio=document.getElementById('item-escritorio').value;
+  const readers={
+    tarefa:()=>({ atividade:document.getElementById('tar-atividade').value.trim(), processo:document.getElementById('tar-processo').value.trim(), assunto:document.getElementById('tar-assunto').value.trim(), situacao:document.getElementById('tar-situacao').value, prioridade:document.getElementById('tar-prioridade').value, data:document.getElementById('tar-data').value, obs:document.getElementById('tar-obs').value }),
+    audiencia:()=>({ tipo:document.getElementById('aud-tipo').value, processo:document.getElementById('aud-processo').value.trim(), cliente:document.getElementById('aud-cliente').value.trim(), parte:document.getElementById('aud-parte').value.trim(), assunto:document.getElementById('aud-assunto').value.trim(), data:document.getElementById('aud-data').value, hora:document.getElementById('aud-hora').value, local:document.getElementById('aud-local').value.trim(), status:document.getElementById('aud-status').value, obs:document.getElementById('aud-obs').value }),
+    processo:()=>({ cliente:document.getElementById('proc-cliente').value.trim(), parte:document.getElementById('proc-parte').value.trim(), numero:document.getElementById('proc-numero').value.trim(), assunto:document.getElementById('proc-assunto').value.trim(), situacao:document.getElementById('proc-situacao').value.trim(), vara:document.getElementById('proc-vara').value.trim(), obs:document.getElementById('proc-obs').value }),
+    demanda:()=>({ atividade:document.getElementById('dem-atividade').value.trim(), processo:document.getElementById('dem-processo').value.trim(), assunto:document.getElementById('dem-assunto').value.trim(), prazo:document.getElementById('dem-prazo').value, situacao:document.getElementById('dem-situacao').value, prioridade:document.getElementById('dem-prioridade').value, obs:document.getElementById('dem-obs').value }),
+    delegacao:()=>({ atividade:document.getElementById('del-atividade').value.trim(), processo:document.getElementById('del-processo').value.trim(), situacao:document.getElementById('del-situacao').value, vinculado:document.getElementById('del-vinculado').value, prioridade:document.getElementById('del-prioridade').value, data:document.getElementById('del-data').value, obs:document.getElementById('del-obs').value })
+  };
+  const fields=readers[tipo]();
+  const label=fields.atividade||fields.cliente||fields.tipo;
+  if(!label){ alert('Preencha o campo principal!'); return; }
+  if(id){
+    const idx=data[aba].findIndex(x=>x.id===id);
+    if(idx>=0){
+      const old=data[aba][idx];
+      const oldSit=old.situacao||old.status;
+      const newSit=fields.situacao||fields.status;
+      if(oldSit!==newSit){ if(!old.historico)old.historico=[]; old.historico.push({de:oldSit,para:newSit,em:now()}); }
+      data[aba][idx]={...old,...fields,escritorio};
+    }
+  } else { data[aba].push({id:uid(),...fields,escritorio,anotacoes:[],historico:[]}); }
+  if(aba!=='delegacoes') verificarCruzamentoDelegacao(aba, fields);
+  if(aba==='delegacoes') verificarCruzamentoInverso(fields);
+  const _abaModal=tipoToAba(document.getElementById('item-tipo').value);
+  if(_abaModal==='processos'){
+    const procSalvo=data.processos.find(x=>x.id===fields.id)||fields;
+    const abasVinculo=criarVinculosDoProcesso(procSalvo);
+    resetVinculos();
+    saveData('processos');
+    if(abasVinculo.includes('tarefas')) saveData('tarefas');
+    if(abasVinculo.includes('audiencias')) saveData('audiencias');
+  } else { saveData(_abaModal); }
+  closeModal('modal-item'); render();
+}
+
+function arquivarDoModal(){
+  const tipo=document.getElementById('item-tipo').value;
+  const id=document.getElementById('item-id').value;
+  if(id) arquivar(tipoToAba(tipo), id);
+  closeModal('modal-item');
+}
+
+function arquivar(aba, id){
+  if(!confirm('Arquivar este registro? Você pode restaurá-lo depois.')) return;
+  const idx=data[aba].findIndex(x=>x.id===id);
+  if(idx<0) return;
+  const r={...data[aba][idx], _aba:aba, _arquivadoEm:now()};
+  data[aba].splice(idx,1);
+  data.arquivo.push(r);
+  saveData('arquivo'); render();
+}
+
+function restaurar(id){
+  const idx=data.arquivo.findIndex(x=>x.id===id);
+  if(idx<0) return;
+  const r={...data.arquivo[idx]};
+  const aba=r._aba;
+  delete r._aba; delete r._arquivadoEm;
+  if(data[aba]) data[aba].push(r);
+  data.arquivo.splice(idx,1);
+  saveData('arquivo'); renderArquivo(); render();
+}
+
+function excluirArquivo(id){
+  if(!confirm('Excluir permanentemente? Esta ação não pode ser desfeita.')) return;
+  data.arquivo=data.arquivo.filter(x=>x.id!==id);
+  saveData('arquivo'); renderArquivo(); renderDashboard();
+}
+
+function deleteItem(aba, id){
+  if(!confirm('Mover para a lixeira? O item ficará lá por 30 dias antes de ser excluído definitivamente.')) return;
+  const idx=data[aba].findIndex(x=>x.id===id);
+  if(idx<0) return;
+  const r={...data[aba][idx], _aba:aba, _deletadoEm:now()};
+  data[aba].splice(idx,1);
+  if(!Array.isArray(data.lixeira)) data.lixeira=[];
+  data.lixeira.push(r);
+  atualizarBadgeLixeira();
+  saveData('lixeira'); render();
+}
+
+function atualizarBadgeLixeira(){
+  const n=(data.lixeira||[]).length;
+  const tab=document.getElementById('tab-lixeira');
+  if(tab) tab.textContent=n>0?`Lixeira (${n})`:'Lixeira';
+}
+
+function renderLixeira(){
+  atualizarBadgeLixeira();
+  if(!data.lixeira||!data.lixeira.length){ document.getElementById('lista-lixeira').innerHTML='<div class="empty-state"><div class="emoji">🗑</div>Lixeira vazia</div>'; return; }
+  const agora=Date.now();
+  const tipoLabels={tarefas:'📋 Tarefa',audiencias:'🏛 Audiência',processos:'📁 Processo',demandas:'⚙️ Demanda',delegacoes:'🤝 Delegação'};
+  let html='<div class="tbl-wrap"><table><thead><tr><th>Tipo</th><th>Registro</th><th>Escritório</th><th>Deletado em</th><th>Expira em</th><th>Ações</th></tr></thead><tbody>';
+  [...data.lixeira].sort((a,b)=>{ const pa=parseDateTimePt(a._deletadoEm),pb=parseDateTimePt(b._deletadoEm); return pb-pa; }).forEach(r=>{
+    const label=r.atividade||r.cliente||r.tipo||r.desc||'—';
+    const proc=r.processo||r.numero||'';
+    const tipo=tipoLabels[r._aba]||r._aba||'Registro';
+    const dt=parseDateTimePt(r._deletadoEm);
+    const expira=dt?new Date(dt.getTime()+30*24*60*60*1000):null;
+    const diasRestantes=expira?Math.ceil((expira-agora)/86400000):null;
+    const expiraTag=diasRestantes!==null?(diasRestantes<=3?`<span class="tag tag-red">${diasRestantes}d restantes</span>`:(diasRestantes<=7?`<span class="tag tag-amber">${diasRestantes}d restantes</span>`:`<span class="tag tag-gray">${diasRestantes}d restantes</span>`)):'—';
+    html+=`<tr><td>${tipo}</td><td><strong>${esc(label)}</strong>${proc?`<br><span class="num-processo">${esc(proc)}</span>`:''}</td><td><span style="font-size:11px;color:#6e6e73">${esc(escritorioLabel(r.escritorio))}</span></td><td><span style="font-size:12px;color:#6e6e73">${esc(r._deletadoEm||'—')}</span></td><td>${expiraTag}</td><td><div class="action-btns"><button class="btn-icon" data-tip="Restaurar" onclick="restaurarDaLixeira('${escAttr(r.id)}')">${SVG_RESTORE}</button><button class="btn-icon danger" data-tip="Excluir definitivamente" onclick="excluirDaLixeira('${escAttr(r.id)}')">${SVG.trash}</button></div></td></tr>`;
+  });
+  html+='</tbody></table></div>';
+  document.getElementById('lista-lixeira').innerHTML=html;
+}
+
+function parseDateTimePt(s){
+  if(!s) return null;
+  const m=s.match(/(\d{2})\/(\d{2})\/(\d{4}) (\d{2}):(\d{2})/);
+  if(!m) return null;
+  return new Date(+m[3],+m[2]-1,+m[1],+m[4],+m[5]);
+}
+
+function restaurarDaLixeira(id){
+  const idx=data.lixeira.findIndex(x=>x.id===id);
+  if(idx<0) return;
+  const r={...data.lixeira[idx]};
+  const aba=r._aba;
+  delete r._aba; delete r._deletadoEm;
+  if(data[aba]) data[aba].push(r);
+  data.lixeira.splice(idx,1);
+  atualizarBadgeLixeira();
+  saveData('lixeira'); renderLixeira(); render();
+}
+
+function excluirDaLixeira(id){
+  if(!confirm('Excluir permanentemente? Esta ação não pode ser desfeita.')) return;
+  data.lixeira=data.lixeira.filter(x=>x.id!==id);
+  atualizarBadgeLixeira();
+  saveData('lixeira'); renderLixeira();
+}
+
+function esvaziarLixeira(){
+  if(!data.lixeira||!data.lixeira.length) return;
+  if(!confirm(`Excluir permanentemente os ${data.lixeira.length} itens da lixeira? Esta ação não pode ser desfeita.`)) return;
+  data.lixeira=[];
+  atualizarBadgeLixeira();
+  saveData('lixeira'); renderLixeira();
+}
+
+function renderFeedModal(anotacoes, aba, regId){
+  const el=document.getElementById('item-feed-list');
+  if(!el) return;
+  if(!anotacoes.length){ el.innerHTML='<div style="font-size:12px;color:#6e6e73;text-align:center;padding:10px">Nenhuma anotação ainda</div>'; return; }
+  let html='';
+  [...anotacoes].reverse().forEach(a=>{
+    html+=`<div class="feed-item"><div class="feed-item-header"><span class="feed-ts">🕐 ${esc(a.ts)}</span><div class="action-btns"><button class="btn btn-gray btn-sm" onclick="editFeedItem('${a.id}','${aba}','${regId}')">✏️</button><button class="btn btn-red btn-sm" onclick="deleteFeedItem('${a.id}','${aba}','${regId}')">🗑</button></div></div><div id="feed-text-${a.id}">${esc(a.texto).replace(/\n/g,'<br>')}</div></div>`;
+  });
+  el.innerHTML=html;
+}
+
+function addFeedItem(){
+  const aba=tipoToAba(document.getElementById('item-tipo').value);
+  const regId=document.getElementById('item-id').value;
+  const input=document.getElementById('item-feed-input');
+  const txt=input.value.trim();
+  if(!txt||!regId) return;
+  const reg=data[aba].find(x=>x.id===regId);
+  if(!reg) return;
+  if(!reg.anotacoes) reg.anotacoes=[];
+  reg.anotacoes.push({id:uid(),texto:txt,ts:now()});
+  input.value=''; updateCounter('item-feed-input','item-feed-counter');
+  saveData(aba); renderFeedModal(reg.anotacoes, aba, regId);
+}
+
+function editFeedItem(feedId, aba, regId){
+  const reg=data[aba].find(x=>x.id===regId);
+  if(!reg) return;
+  const item=(reg.anotacoes||[]).find(x=>x.id===feedId);
+  if(!item) return;
+  const el=document.getElementById('feed-text-'+feedId);
+  if(!el) return;
+  el.innerHTML=`<textarea style="width:100%;border-radius:6px;border:0.5px solid #d1d1d6;padding:6px;font-size:13px;font-family:inherit" rows="3" id="feed-edit-${feedId}">${esc(item.texto)}</textarea><div style="display:flex;gap:6px;margin-top:6px;justify-content:flex-end"><button class="btn btn-gray btn-sm" onclick="cancelEditFeed('${feedId}','${escAttr(item.texto)}')">Cancelar</button><button class="btn btn-blue btn-sm" onclick="saveFeedEdit('${feedId}','${aba}','${regId}')">Salvar</button></div>`;
+}
+
+function saveFeedEdit(feedId, aba, regId){
+  const val=(document.getElementById('feed-edit-'+feedId)||{value:''}).value.trim();
+  if(!val) return;
+  const reg=data[aba].find(x=>x.id===regId);
+  if(!reg) return;
+  const item=(reg.anotacoes||[]).find(x=>x.id===feedId);
+  if(item){ item.texto=val; item.ts+=' (editado)'; }
+  saveData(aba); renderFeedModal(reg.anotacoes, aba, regId);
+}
+
+function cancelEditFeed(feedId, originalText){
+  const el=document.getElementById('feed-text-'+feedId);
+  if(el) el.innerHTML=esc(originalText).replace(/\n/g,'<br>');
+}
+
+function deleteFeedItem(feedId, aba, regId){
+  if(!confirm('Excluir esta anotação?')) return;
+  const reg=data[aba].find(x=>x.id===regId);
+  if(!reg) return;
+  reg.anotacoes=(reg.anotacoes||[]).filter(x=>x.id!==feedId);
+  saveData(aba); renderFeedModal(reg.anotacoes, aba, regId);
+}
+
+function updateCounter(inputId, counterId){
+  const i=document.getElementById(inputId), c=document.getElementById(counterId);
+  if(i&&c) c.textContent=i.value.length+'/2000';
+}
+
+function renderHistBlock(elId, historico){
+  const el=document.getElementById(elId);
+  if(!el||!historico.length){ if(el)el.innerHTML=''; return; }
+  el.innerHTML=`<span style="font-size:11px;color:#0071e3;cursor:pointer" onclick="this.nextSibling.style.display=this.nextSibling.style.display==='none'?'block':'none'">↩ ${historico.length} alteração(ões) de status ▾</span><ul class="hist-timeline" style="display:none;margin-top:6px">${historico.map(h=>`<li><div class="hist-dot"></div><div><strong>${esc(h.de)}</strong> → <strong>${esc(h.para)}</strong><br><span style="color:#6e6e73;font-size:11px">${esc(h.em)}</span></div></li>`).join('')}</ul>`;
+}
+
+function showHistorico(regId, aba){
+  const reg=data[aba].find(x=>x.id===regId);
+  if(!reg||(reg.historico||[]).length===0) return;
+  document.getElementById('hist-list').innerHTML=reg.historico.map(h=>`<li><div class="hist-dot"></div><div><strong>${esc(h.de)}</strong> → <strong>${esc(h.para)}</strong><br><span style="color:#6e6e73;font-size:11px">${esc(h.em)}</span></div></li>`).join('');
+  openModal('modal-historico');
+}
+
+// ============================================================
+// CALENDÁRIO
+// ============================================================
+let calState={};
+function toggleCal(calId){
+  const cal=document.getElementById(calId);
+  if(cal.classList.contains('open')){ cal.classList.remove('open'); return; }
+  document.querySelectorAll('.cal-popup.open').forEach(c=>c.classList.remove('open'));
+  const inputMap={'cal-aud':'aud-data','cal-dem':'dem-prazo','cal-tar':'tar-data','cal-del':'del-data','cal-vt':'vt-prazo','cal-va':'va-data','cal-oab':'oab-data','cal-oab-prazo':'oab-prazo'};
+  const inputId=inputMap[calId]||'aud-data';
+  const t=new Date();
+  const sel=parseDatePt(document.getElementById(inputId).value);
+  const useDate=(sel&&sel>=new Date(t.getFullYear(),t.getMonth(),1))?sel:t;
+  calState[calId]={year:useDate.getFullYear(), month:useDate.getMonth(), inputId, selected:sel};
+  renderCal(calId); cal.classList.add('open');
+}
+function renderCal(calId){
+  const s=calState[calId];
+  const months=['Janeiro','Fevereiro','Março','Abril','Maio','Junho','Julho','Agosto','Setembro','Outubro','Novembro','Dezembro'];
+  const today=new Date(); today.setHours(0,0,0,0);
+  const firstDay=new Date(s.year,s.month,1).getDay();
+  const daysInMonth=new Date(s.year,s.month+1,0).getDate();
+  let grid='<div class="cal-grid">';
+  ['D','S','T','Q','Q','S','S'].forEach(d=>grid+=`<div class="cal-day-name">${d}</div>`);
+  for(let i=0;i<firstDay;i++) grid+='<div class="cal-day empty"></div>';
+  for(let d=1;d<=daysInMonth;d++){
+    const dt=new Date(s.year,s.month,d);
+    const isT=dt.getTime()===today.getTime();
+    const isS=s.selected&&dt.getTime()===s.selected.getTime();
+    grid+=`<div class="cal-day${isT?' today':''}${isS?' selected':''}" onclick="selectCalDay('${calId}',${d})">${d}</div>`;
+  }
+  grid+='</div>';
+  document.getElementById(calId).innerHTML=`<div class="cal-nav"><button onclick="event.stopPropagation();moveCal('${calId}',-1)">‹</button><span>${months[s.month]} ${s.year}</span><button onclick="event.stopPropagation();moveCal('${calId}',1)">›</button></div>${grid}`;
+}
+function moveCal(calId,dir){ const s=calState[calId]; s.month+=dir; if(s.month<0){s.month=11;s.year--;} if(s.month>11){s.month=0;s.year++;} renderCal(calId); }
+function selectCalDay(calId,day){ const s=calState[calId]; const d=new Date(s.year,s.month,day); s.selected=d; document.getElementById(s.inputId).value=formatDate(d); document.getElementById(calId).classList.remove('open'); }
+document.addEventListener('click',e=>{ if(!e.target.closest('.cal-wrapper')) document.querySelectorAll('.cal-popup.open').forEach(c=>c.classList.remove('open')); });
+
+function openModal(id){ document.getElementById(id).classList.add('open'); }
+function closeModal(id){ document.getElementById(id).classList.remove('open'); }
+document.addEventListener('click',e=>{ if(e.target.classList.contains('modal-overlay')) closeModal(e.target.id); });
+
+// ============================================================
+// EXPORTAR BACKUP
+// ============================================================
+function exportBackup(){
+  const d=new Date();
+  const ds=pad(d.getDate())+'-'+pad(d.getMonth()+1)+'-'+d.getFullYear();
+  let txt='=== BACKUP GESTÃO RODRIGO ===\nGerado em: '+now()+'\n\n';
+  txt+='--- TAREFAS ('+data.tarefas.length+') ---\n';
+  data.tarefas.forEach((t,i)=>{ txt+=`\n[${i+1}] [${escritorioLabel(t.escritorio)}] ${t.atividade}\nProcesso: ${t.processo||'—'} | Assunto: ${t.assunto||'—'}\nSituação: ${t.situacao} | Prioridade: ${t.prioridade}\n`; if((t.anotacoes||[]).length){txt+='Anotações:\n';t.anotacoes.forEach(a=>txt+=`  [${a.ts}] ${a.texto}\n`);} });
+  txt+='\n--- AUDIÊNCIAS / ATOS ('+data.audiencias.length+') ---\n';
+  data.audiencias.forEach((a,i)=>{ txt+=`\n[${i+1}] [${escritorioLabel(a.escritorio)}] ${a.tipo} — ${a.data} ${a.hora||''}\nProcesso: ${a.processo||'—'} | Cliente: ${a.cliente||'—'} | Parte: ${a.parte||'—'}\nStatus: ${a.status||a.situacao}\n`; });
+  txt+='\n--- PROCESSOS ('+data.processos.length+') ---\n';
+  data.processos.forEach((p,i)=>{ txt+=`\n[${i+1}] [${escritorioLabel(p.escritorio)}] ${p.cliente||'—'} x ${p.parte||'—'}\nProcesso: ${p.numero||'—'} | Assunto: ${p.assunto||'—'} | Situação: ${p.situacao||'—'}\n`; });
+  txt+='\n--- DELEGAÇÕES MARA ('+data.delegacoes.length+') ---\n';
+  data.delegacoes.forEach((d,i)=>{ txt+=`\n[${i+1}] ${d.atividade} | Processo: ${d.processo||'—'} | Situação: ${d.situacao}\n`; });
+  const divLabels={licitacoes:'Comissão de Licitações',escola:'OAB vai à Escola',geral:'Assuntos Gerais'};
+  txt+='\n--- OAB ('+(data.oab||[]).length+') ---\n';
+  (data.oab||[]).forEach((o,i)=>{ txt+=`\n[${i+1}] [${divLabels[o.divisao]||o.divisao}] [${o.tipo}] ${o.titulo}${o.data?' | Data: '+o.data:''}${o.prazo?' | Prazo: '+o.prazo:''} | Status: ${o.status||'—'}\n`; });
+  txt+='\n--- ARQUIVO ('+data.arquivo.length+') ---\n';
+  data.arquivo.forEach((r,i)=>{ txt+=`\n[${i+1}] [${r._aba}] ${r.atividade||r.cliente||r.tipo||'—'} | Arquivado em ${r._arquivadoEm}\n`; });
+  // Exporta comentários do dashboard
+  const _comsExport = getLembretes();
+  txt+='\n--- COMENTÁRIOS DASHBOARD ('+_comsExport.length+') ---\n';
+  _comsExport.forEach((c,i)=>{ txt+=`\n[${i+1}] [${c.ts||''}] [id:${c.id||''}]\n${c.texto||''}\n`; });
+  const blob=new Blob([txt],{type:'text/plain;charset=utf-8'});
+  const url=URL.createObjectURL(blob);
+  const a=document.createElement('a');
+  a.href=url; a.download='backup_gestao_rodrigo_'+ds+'.txt'; a.click(); URL.revokeObjectURL(url);
+}
+
+// ============================================================
+// SEED
+// ============================================================
+function seedDados(){
+  if(data.tarefas.length||data.audiencias.length||data.processos.length||data.demandas.length||data.delegacoes.length) return;
+  const d = {"tarefas":[{"id":"mmuzwegc0upv9","escritorio":"principal","atividade":"Expedição de alvará – Criciúma","processo":"5001099-60.2013.8.24.0020","assunto":"Levantamento de valores","situacao":"concluido","prioridade":"vermelho","obs":"","anotacoes":[],"historico":[]},{"id":"mmuzwegc6qf6g","escritorio":"principal","atividade":"Cumprir prazo – Jaira","processo":"5055569-98.2024.8.24.0038","assunto":"","situacao":"delegado","prioridade":"vermelho","obs":"","anotacoes":[],"historico":[]},{"id":"mmuzwegcevgyk","escritorio":"principal","atividade":"Atualizar cálculo e verificar possível adjudicação – Gert","processo":"","assunto":"Execução / atualização de débito","situacao":"pendente","prioridade":"vermelho","obs":"","anotacoes":[],"historico":[]},{"id":"mmuzwegccg61g","escritorio":"principal","atividade":"Acompanhar andamento – Notificação Silmara","processo":"","assunto":"Notificação extrajudicial","situacao":"em_acompanhamento","prioridade":"vermelho","obs":"","anotacoes":[],"historico":[]},{"id":"mmuzwegc2d563","escritorio":"pai","atividade":"Petição – Clécia","processo":"5050290-97.2025.8.24.0038","assunto":"","situacao":"concluido","prioridade":"vermelho","obs":"","anotacoes":[],"historico":[]},{"id":"mmuzwegcnu4t5","escritorio":"pai","atividade":"Cumprimento de sentença – TJMJ","processo":"5031423-18.2022.8.13.0701","assunto":"Liquidação de sentença","situacao":"em_andamento","prioridade":"vermelho","obs":"","anotacoes":[],"historico":[]},{"id":"mmuzwegclp6fg","escritorio":"pai","atividade":"Avisar cliente – Tai Lanches","processo":"","assunto":"","situacao":"pendente","prioridade":"vermelho","obs":"","anotacoes":[],"historico":[]},{"id":"mmuzwegcyqmsq","escritorio":"pai","atividade":"Ação trabalhista – Lucas","processo":"","assunto":"Trabalhista","situacao":"pendente","prioridade":"amarelo","obs":"","anotacoes":[],"historico":[]},{"id":"mmuzwegcmoz1c","escritorio":"pai","atividade":"Requerer averbação na matrícula","processo":"5000772-22.2017.8.24.0038","assunto":"Registro imobiliário","situacao":"pendente","prioridade":"vermelho","obs":"","anotacoes":[],"historico":[]}],"audiencias":[{"id":"mmuzwegcmwbqq","escritorio":"principal","tipo":"AIJ","processo":"5023122-96.2020.8.24.0038","cliente":"Representação Injetora Plástico Ltda","parte":"Maicon André Beiersdorf","assunto":"","data":"03/03/2025","hora":"13:45","local":"","status":"realizada","obs":"","anotacoes":[],"historico":[]},{"id":"mmuzwegc1i158","escritorio":"principal","tipo":"Perícia","processo":"0001891-15.2025.5.12.0004","cliente":"Elaine Ribeiro da Silva","parte":"AM/PM Comestíveis Ltda","assunto":"Trabalhista","data":"22/04/2025","hora":"08:00","local":"","status":"agendada","obs":"","anotacoes":[],"historico":[]},{"id":"mmuzwegcia8pz","escritorio":"pai","tipo":"Audiência","processo":"0000847-77.2025.5.12.0030","cliente":"Tai Lanches","parte":"Maria Fausta de Lima Ramos Vieira","assunto":"Trabalhista","data":"17/03/2025","hora":"09:15","local":"","status":"agendada","obs":"","anotacoes":[],"historico":[]},{"id":"mmuzwegc3oumo","escritorio":"dativa","tipo":"AIJ","processo":"5000086-76.2025.8.24.0126","cliente":"Carlos Antônio Carvalho","parte":"","assunto":"","data":"24/03/2025","hora":"15:45","local":"","status":"agendada","obs":"","anotacoes":[],"historico":[]}],"processos":[{"id":"mmuzwegcu8wyg","escritorio":"mariana","cliente":"Ivonete Kitto Colagrande","parte":"Banco do Brasil","numero":"5011870-23.2025.8.24.0038","assunto":"Descontos indevidos","situacao":"Aguarda julgamento – Turma Recursal","vara":"Turma Recursal","obs":"","anotacoes":[],"historico":[]},{"id":"mmuzwegcfmxzg","escritorio":"mariana","cliente":"Edneia Fukaia Martins","parte":"Sbaraini","numero":"5007999-19.2024.8.24.0038","assunto":"Rescisão contratual","situacao":"Aguarda pauta – TJSC","vara":"TJSC","obs":"","anotacoes":[],"historico":[]},{"id":"mmuzwegcqb5ob","escritorio":"mariana","cliente":"Kelyene Menezes Mello","parte":"PB Imobiliário","numero":"5008666-68.2025.8.24.0038","assunto":"Rescisão locação","situacao":"Em andamento","vara":"","obs":"","anotacoes":[],"historico":[]},{"id":"mmuzwegcoyd8p","escritorio":"mariana","cliente":"Daniel Santana Luzia","parte":"Município de Navegantes","numero":"5009341-31.2025.8.24.0135","assunto":"","situacao":"Em andamento","vara":"","obs":"","anotacoes":[],"historico":[]},{"id":"mmuzwegc16fn1","escritorio":"mariana","cliente":"Marcos Fabrício Rossetti","parte":"Município de Navegantes","numero":"504599-85.2025.8.24.0038","assunto":"","situacao":"Em andamento","vara":"","obs":"","anotacoes":[],"historico":[]},{"id":"mmuzwegcgbgzo","escritorio":"mariana","cliente":"Jeremias","parte":"Município de Navegantes","numero":"5009608-03.2025.8.24.0135","assunto":"","situacao":"Em andamento","vara":"","obs":"","anotacoes":[],"historico":[]},{"id":"mmuzwegc9gdhh","escritorio":"mariana","cliente":"Thiago e Juliana","parte":"Município de Navegantes","numero":"5010028-08.2025.8.24.0135","assunto":"","situacao":"Em andamento","vara":"","obs":"","anotacoes":[],"historico":[]},{"id":"mmuzwegc59tpb","escritorio":"jessica","cliente":"Luiz Felipe Ferreira Calafiori Viani","parte":"João Augusto Pires Bueno","numero":"5008967-52.2025.8.24.0058","assunto":"Indenização","situacao":"Em andamento","vara":"","obs":"","anotacoes":[],"historico":[]}],"demandas":[],"delegacoes":[{"id":"mmuzwegcao9a5","atividade":"Avisar perícia – Márcia","processo":"","situacao":"aguardando_confirmacao","prioridade":"vermelho","obs":"","anotacoes":[],"historico":[]},{"id":"mmuzwegco89yr","atividade":"Aposentadoria – Túlio","processo":"","situacao":"aguardando_retorno","prioridade":"vermelho","obs":"","anotacoes":[],"historico":[]},{"id":"mmuzwegc7ohs5","atividade":"Escritura – Alice","processo":"","situacao":"aguardando_retorno","prioridade":"amarelo","obs":"","anotacoes":[],"historico":[]},{"id":"mmuzwegcoelf1","atividade":"Inventário – Débora Biasi","processo":"500753-65.8.2024.8.24.0012","situacao":"aguardando_procuracoes","prioridade":"vermelho","obs":"","anotacoes":[],"historico":[]},{"id":"mmuzwegcoa3gx","atividade":"Cumprir prazo – Jaira","processo":"5055569-98.2024.8.24.0038","situacao":"aguardando_execucao","prioridade":"vermelho","obs":"","anotacoes":[],"historico":[]}],"arquivo":[],"lixeira":[],"oab":[]};
+  Object.keys(d).forEach(k => { data[k] = d[k]; });
+  localStorage.setItem(LS_KEY, JSON.stringify(data));
+}
+
+// ============================================================
+// COMENTÁRIOS / LEMBRETES
+// ============================================================
+let lembretesCollapsed = false;
+
+function loadLembretes(){
+  renderComentarios();
+  const ta=document.getElementById('lembretes-textarea');
+  if(ta) ta.addEventListener('input', updateLembretesCounter);
+}
+function updateLembretesCounter(){
+  const ta=document.getElementById('lembretes-textarea');
+  const c=document.getElementById('lembretes-counter');
+  if(ta&&c) c.textContent=(2000-ta.value.length)+' caracteres restantes';
+}
+function getLembretes(){ try { return JSON.parse(localStorage.getItem(LS_KEY+'_comentarios')||'[]'); } catch(e){ return []; } }
+function saveLembretesData(arr){ localStorage.setItem(LS_KEY+'_comentarios', JSON.stringify(arr)); }
+function addComentario(){
+  const ta=document.getElementById('lembretes-textarea');
+  const txt=ta.value.trim();
+  if(!txt) return;
+  const arr=getLembretes();
+  arr.unshift({id:uid(),texto:txt,ts:now()});
+  saveLembretesData(arr);
+  ta.value=''; updateLembretesCounter(); renderComentarios();
+}
+function renderComentarios(){
+  const arr=getLembretes();
+  const el=document.getElementById('comentarios-lista');
+  if(!el) return;
+  if(!arr.length){ el.innerHTML='<div style="font-size:13px;color:#aaa;text-align:center;padding:12px 0">Nenhum comentário ainda.</div>'; return; }
+  el.innerHTML=arr.map(c=>`<div style="display:flex;gap:10px;padding:12px 0;border-top:0.5px solid #f2f2f7" id="com-${c.id}"><div style="width:36px;height:36px;border-radius:50%;background:#0071e3;color:#fff;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;flex-shrink:0">R</div><div style="flex:1"><div style="display:flex;align-items:baseline;gap:8px;flex-wrap:wrap;margin-bottom:4px"><span style="font-size:13px;font-weight:600;color:#1d1d1f">Rodrigo</span><span style="font-size:11px;color:#6e6e73">${esc(c.ts)}</span></div><div id="com-text-${c.id}" style="font-size:13px;color:#1d1d1f;line-height:1.6;white-space:pre-wrap">${esc(c.texto)}</div><div style="display:flex;gap:12px;margin-top:6px"><span style="font-size:12px;color:#0071e3;cursor:pointer;font-weight:500" onclick="editComentario('${c.id}')">Editar</span><span style="font-size:12px;color:#ff3b30;cursor:pointer;font-weight:500" onclick="deleteComentario('${c.id}')">Excluir</span></div></div></div>`).join('');
+}
+function editComentario(id){
+  const arr=getLembretes(); const item=arr.find(x=>x.id===id); if(!item) return;
+  const el=document.getElementById('com-text-'+id); if(!el) return;
+  el.innerHTML=`<textarea style="width:100%;border-radius:6px;border:0.5px solid #d1d1d6;padding:8px;font-size:13px;font-family:inherit;resize:vertical" rows="3" id="com-edit-${id}">${esc(item.texto)}</textarea><div style="display:flex;gap:8px;margin-top:6px"><button class="btn btn-gray btn-sm" onclick="cancelEditComentario('${id}','${escAttr(item.texto)}')">Cancelar</button><button class="btn btn-blue btn-sm" onclick="saveEditComentario('${id}')">Salvar</button></div>`;
+}
+function saveEditComentario(id){
+  const val=(document.getElementById('com-edit-'+id)||{value:''}).value.trim(); if(!val) return;
+  const arr=getLembretes(); const item=arr.find(x=>x.id===id);
+  if(item){ item.texto=val; item.ts+=' (editado)'; }
+  saveLembretesData(arr); renderComentarios();
+}
+function cancelEditComentario(id, original){
+  const el=document.getElementById('com-text-'+id);
+  if(el) el.innerHTML=`<span style="white-space:pre-wrap">${esc(original)}</span>`;
+}
+function deleteComentario(id){
+  if(!confirm('Excluir este comentário?')) return;
+  saveLembretesData(getLembretes().filter(x=>x.id!==id)); renderComentarios();
+}
+function toggleLembretesCollapse(){
+  lembretesCollapsed=!lembretesCollapsed;
+  document.getElementById('lembretes-body').style.display=lembretesCollapsed?'none':'block';
+  document.getElementById('btn-collapse-lembretes').textContent=lembretesCollapsed?'▼':'▲';
+}
+
+// ============================================================
+// DETECÇÃO DE DUPLICATAS
+// ============================================================
+function isNumeroProcesso(val){ return /\d{7}-\d{2}\.\d{4}\.\d{1,2}\.\d{2}\.\d{4}/.test(val)||/\d{5,}-\d{2}\.\d{4}/.test(val); }
+function normStr(s){ return String(s||'').toLowerCase().trim().replace(/\s+/g,' '); }
+
+function verificarDuplicata(tipo, val){
+  val=(val||'').trim();
+  if(!val||val.length<4) return;
+  if(document.getElementById('item-id').value) return;
+  const abas=['tarefas','audiencias','processos','demandas','delegacoes'];
+  const tipoLabels={tarefas:'Tarefa',audiencias:'Audiência',processos:'Processo',demandas:'Demanda',delegacoes:'Delegação'};
+  const encontrados=[];
+  abas.forEach(aba=>{
+    (data[aba]||[]).forEach(r=>{
+      let match=false;
+      const campos=[r.atividade,r.cliente,r.numero,r.processo,r.tipo];
+      if(tipo==='processo'&&isNumeroProcesso(val)){ match=campos.some(c=>c&&normStr(c)===normStr(val)); }
+      else if(tipo==='nome'){ const v=normStr(val); match=v.length>=4&&campos.some(c=>c&&normStr(c)===v); }
+      if(match) encontrados.push({aba,r});
+    });
+  });
+  if(!encontrados.length) return;
+  const linhas=encontrados.map(({aba,r})=>{ const label=r.atividade||r.cliente||r.numero||r.tipo||'—'; const proc=r.processo||r.numero||''; return `• ${tipoLabels[aba]}: <strong>${esc(label)}</strong>${proc?' — '+esc(proc):''} <span class="tag tag-amber" style="font-size:10px">${esc(escritorioLabel(r.escritorio))}</span>`; }).join('<br>');
+  showToastDuplicata(tipo==='processo'?'⚠️ Processo já cadastrado':'⚠️ Registro semelhante encontrado', linhas, encontrados[0]);
+}
+
+function showToastDuplicata(titulo, linhas, primeiro){
+  const old=document.getElementById('toast-duplicata'); if(old) old.remove();
+  const toast=document.createElement('div'); toast.id='toast-duplicata';
+  toast.style.cssText='position:fixed;bottom:24px;left:50%;transform:translateX(-50%);background:#fff;border:0.5px solid #f48fb1;border-radius:14px;box-shadow:0 8px 30px rgba(0,0,0,0.15);padding:16px 20px;max-width:480px;width:90%;z-index:500;font-size:13px;line-height:1.6;animation:slideUp .2s ease';
+  toast.innerHTML=`<div style="font-weight:700;color:#c62828;margin-bottom:8px">${titulo}</div><div style="color:#1d1d1f;margin-bottom:12px">${linhas}</div><div style="display:flex;gap:8px;justify-content:flex-end"><button class="btn btn-gray btn-sm" onclick="document.getElementById('toast-duplicata').remove()">Ignorar e continuar</button><button class="btn btn-blue btn-sm" onclick="verRegistroDuplicata('${primeiro.aba}','${primeiro.r.id}')">Ver registro</button></div>`;
+  if(!document.getElementById('toast-style')){ const s=document.createElement('style'); s.id='toast-style'; s.textContent='@keyframes slideUp{from{opacity:0;transform:translateX(-50%) translateY(16px)}to{opacity:1;transform:translateX(-50%) translateY(0)}}'; document.head.appendChild(s); }
+  document.body.appendChild(toast);
+  setTimeout(()=>{ if(toast.parentNode) toast.remove(); }, 10000);
+}
+
+function verRegistroDuplicata(aba, id){
+  document.getElementById('toast-duplicata')?.remove();
+  closeModal('modal-item');
+  const tipoMap={tarefas:'tarefa',audiencias:'audiencia',processos:'processo',demandas:'demanda',delegacoes:'delegacao'};
+  showTab(aba);
+  setTimeout(()=>openModalItem(tipoMap[aba],id), 200);
+}
+
+// ============================================================
+// CRUZAMENTO COM DELEGAÇÕES MARA
+// ============================================================
+function verificarCruzamentoDelegacao(aba, fields){
+  const textoNovo=normStr(fields.atividade||fields.cliente||fields.tipo||'');
+  const procNovo=normStr(fields.processo||fields.numero||'');
+  data.delegacoes.forEach(del=>{
+    const textoDelg=normStr(del.atividade||'');
+    const procDelg=normStr(del.processo||'');
+    const matchTexto=textoNovo.length>=4&&textoNovo===textoDelg;
+    const matchProc=procNovo.length>=6&&procNovo===procDelg;
+    if(matchTexto||matchProc){
+      const idx=data[aba].findIndex(r=>normStr(r.atividade||r.cliente||r.tipo||'')===textoNovo||(procNovo&&normStr(r.processo||r.numero||'')===procNovo));
+      if(idx>=0){ data[aba][idx]._delegadaMara=true; data[aba][idx]._delegadaMaraId=del.id; }
+      showToastMara(del, aba);
+    }
+  });
+}
+
+function verificarCruzamentoInverso(fields){
+  const textoDelg=normStr(fields.atividade||'');
+  const procDelg=normStr(fields.processo||'');
+  const delId=data.delegacoes[data.delegacoes.length-1]?.id;
+  ['tarefas','audiencias','processos','demandas'].forEach(aba=>{
+    data[aba].forEach((r,idx)=>{
+      const textoR=normStr(r.atividade||r.cliente||r.tipo||'');
+      const procR=normStr(r.processo||r.numero||'');
+      const matchTexto=textoDelg.length>=4&&textoDelg===textoR;
+      const matchProc=procDelg.length>=6&&procDelg===procR;
+      if(matchTexto||matchProc){ data[aba][idx]._delegadaMara=true; data[aba][idx]._delegadaMaraId=delId; showToastMara(data.delegacoes[data.delegacoes.length-1], aba, r); }
+    });
+  });
+}
+
+function showToastMara(del, aba, regExistente){
+  const old=document.getElementById('toast-mara'); if(old) old.remove();
+  const tipoLabels={tarefas:'Tarefa',audiencias:'Audiência',processos:'Processo',demandas:'Demanda'};
+  const msg=regExistente?`A delegação "<strong>${esc(del.atividade)}</strong>" corresponde a uma <strong>${tipoLabels[aba]}</strong> já cadastrada.`:`Esta entrada corresponde à delegação Mara: "<strong>${esc(del.atividade)}</strong>".`;
+  const toast=document.createElement('div'); toast.id='toast-mara';
+  toast.style.cssText='position:fixed;bottom:24px;left:50%;transform:translateX(-50%);background:#fff;border:0.5px solid #6ee7b7;border-radius:14px;box-shadow:0 8px 30px rgba(0,0,0,0.12);padding:16px 20px;max-width:460px;width:90%;z-index:500;font-size:13px;line-height:1.6;animation:slideUp .2s ease';
+  toast.innerHTML=`<div style="font-weight:700;color:#065f46;margin-bottom:6px">🤝 Delegado à Mara — cruzamento detectado</div><div style="color:#1d1d1f;margin-bottom:12px">${msg} O registro foi marcado automaticamente.</div><div style="display:flex;gap:8px;justify-content:flex-end"><button class="btn btn-gray btn-sm" onclick="document.getElementById('toast-mara').remove()">OK</button><button class="btn btn-sm" style="background:#d1fae5;color:#065f46;border:0.5px solid #6ee7b7" onclick="showTab('delegacoes');document.getElementById('toast-mara').remove()">Ver Delegações</button></div>`;
+  document.body.appendChild(toast);
+  setTimeout(()=>{ if(toast.parentNode) toast.remove(); }, 12000);
+}
+
+// ============================================================
+// PAINEL LATERAL — PROCESSO
+// ============================================================
+function abrirPainelProcesso(numero){
+  const painel=document.getElementById('painel-processo');
+  const overlay=document.getElementById('painel-overlay');
+  const body=document.getElementById('painel-body');
+  const footer=document.getElementById('painel-footer');
+  document.getElementById('painel-titulo').textContent=numero;
+  const proc=data.processos.find(p=>p.numero===numero);
+  const tarefasRel=data.tarefas.filter(t=>t.processo===numero);
+  const audienciasRel=data.audiencias.filter(a=>a.processo===numero);
+  const delegacoesRel=data.delegacoes.filter(d=>d.processo===numero);
+  let html='';
+  if(proc){
+    html+=`<div style="background:#f0f7ff;border-radius:10px;padding:14px;margin-bottom:16px"><div style="font-size:11px;font-weight:600;color:#0071e3;text-transform:uppercase;letter-spacing:.3px;margin-bottom:10px">📁 Processo cadastrado</div><div style="display:flex;flex-direction:column;gap:6px;font-size:13px"><div><span style="color:#6e6e73">Cliente:</span> <strong>${esc(proc.cliente||'—')}</strong></div><div><span style="color:#6e6e73">Parte contrária:</span> ${esc(proc.parte||'—')}</div><div><span style="color:#6e6e73">Assunto:</span> ${esc(proc.assunto||'—')}</div><div><span style="color:#6e6e73">Situação:</span> ${esc(proc.situacao||'—')}</div><div><span style="color:#6e6e73">Vara/Tribunal:</span> ${esc(proc.vara||'—')}</div><div><span style="color:#6e6e73">Escritório:</span> ${esc(escritorioLabel(proc.escritorio))}</div></div></div>`;
+  } else {
+    html+=`<div style="background:#fff8e1;border:0.5px solid #fde68a;border-radius:10px;padding:14px;margin-bottom:16px;font-size:13px;color:#92400e">⚠️ Este processo <strong>não está cadastrado</strong> na aba Processos ainda.</div>`;
+  }
+  if(tarefasRel.length){ html+=`<div style="font-size:11px;font-weight:600;color:#6e6e73;text-transform:uppercase;letter-spacing:.3px;margin-bottom:8px">📋 Tarefas vinculadas (${tarefasRel.length})</div>`; tarefasRel.forEach(t=>{ html+=`<div style="background:#f9f9f9;border-radius:8px;padding:10px 12px;margin-bottom:6px;font-size:13px;cursor:pointer;border:0.5px solid #e5e5ea" onclick="fecharPainel();openModalItem('tarefa','${escAttr(t.id)}')"><div style="font-weight:500">${esc(t.atividade)}</div><div style="font-size:11px;color:#6e6e73;margin-top:3px">${tagSituacao(t.situacao)} ${tagPrio(t.prioridade)}</div></div>`; }); }
+  if(audienciasRel.length){ html+=`<div style="font-size:11px;font-weight:600;color:#6e6e73;text-transform:uppercase;letter-spacing:.3px;margin:12px 0 8px">🏛 Audiências vinculadas (${audienciasRel.length})</div>`; audienciasRel.forEach(a=>{ html+=`<div style="background:#f9f9f9;border-radius:8px;padding:10px 12px;margin-bottom:6px;font-size:13px;cursor:pointer;border:0.5px solid #e5e5ea" onclick="fecharPainel();openModalItem('audiencia','${escAttr(a.id)}')"><div style="font-weight:500">${esc(a.tipo||'—')} — ${esc(a.data||'—')} ${esc(a.hora||'')}</div><div style="font-size:11px;color:#6e6e73;margin-top:3px">${esc(a.cliente||'—')} ${tagSituacao(a.status||a.situacao)}</div></div>`; }); }
+  if(delegacoesRel.length){ html+=`<div style="font-size:11px;font-weight:600;color:#6e6e73;text-transform:uppercase;letter-spacing:.3px;margin:12px 0 8px">🤝 Delegações vinculadas (${delegacoesRel.length})</div>`; delegacoesRel.forEach(d=>{ html+=`<div style="background:#f9f9f9;border-radius:8px;padding:10px 12px;margin-bottom:6px;font-size:13px;cursor:pointer;border:0.5px solid #e5e5ea" onclick="fecharPainel();openModalItem('delegacao','${escAttr(d.id)}')"><div style="font-weight:500">${esc(d.atividade)}</div><div style="font-size:11px;color:#6e6e73;margin-top:3px">${tagSituacao(d.situacao)}</div></div>`; }); }
+  if(!tarefasRel.length&&!audienciasRel.length&&!delegacoesRel.length&&!proc){ html+=`<div style="font-size:13px;color:#aaa;text-align:center;padding:20px 0">Nenhum outro vínculo encontrado.</div>`; }
+  body.innerHTML=html;
+  if(proc){ footer.innerHTML=`<button class="btn btn-blue" style="flex:1" onclick="fecharPainel();showTab('processos');setTimeout(()=>openModalItem('processo','${escAttr(proc.id)}'),200)">✏️ Editar processo</button>`; }
+  else { footer.innerHTML=`<button class="btn btn-blue" style="flex:1" onclick="fecharPainel();abrirNovoProcessoComNumero('${escAttr(numero)}')">➕ Cadastrar processo</button>`; }
+  painel.classList.add('open'); overlay.classList.add('open');
+}
+
+function fecharPainel(){ document.getElementById('painel-processo').classList.remove('open'); document.getElementById('painel-overlay').classList.remove('open'); }
+function abrirNovoProcessoComNumero(numero){ showTab('processos'); setTimeout(()=>{ openModalItem('processo'); setTimeout(()=>{ document.getElementById('proc-numero').value=numero; }, 100); }, 200); }
+document.addEventListener('keydown', e=>{ if(e.key==='Escape') fecharPainel(); });
+
+function recuperarBackupLocal(){
+  try {
+    const raw=localStorage.getItem(LS_KEY+'_backup_local');
+    if(!raw){ alert('Nenhum backup local encontrado.'); return; }
+    const backup=JSON.parse(raw);
+    const ts=new Date(backup.ts);
+    const dataStr=ts.toLocaleDateString('pt-BR')+' '+ts.toLocaleTimeString('pt-BR');
+    const temDados=['tarefas','processos','audiencias'].some(a=>backup.data[a]&&backup.data[a].length>0);
+    if(!temDados){ alert('Backup local encontrado mas está vazio.'); return; }
+    const tarefas=backup.data.tarefas?.length||0;
+    const processos=backup.data.processos?.length||0;
+    if(!confirm(`Backup local de ${dataStr}\n\nTarefas: ${tarefas} | Processos: ${processos}\n\nRestaurar esses dados?`)) return;
+    const abas=['tarefas','audiencias','processos','demandas','delegacoes','oab','arquivo','lixeira'];
+    abas.forEach(a=>{ if(backup.data[a]) data[a]=backup.data[a]; });
+    localStorage.setItem(LS_KEY, JSON.stringify(data));
+    closeModal('modal-gs'); render(); setStatus('Recuperado ✓','ok');
+    alert('✅ Dados recuperados do backup local!\n\nAgora o sistema vai sincronizar com o Sheets.');
+    syncToSheets();
+  } catch(e){ alert('Erro ao recuperar backup: '+e.message); }
+}
+
+function importarBackup(input){
+  const file=input.files[0]; if(!file) return;
+  const reader=new FileReader();
+  reader.onload=function(e){
+    const conteudo=e.target.result;
+    try {
+      if(file.name.endsWith('.json')||conteudo.trim().startsWith('{')){
+        const parsed=JSON.parse(conteudo);
+        const importado=parsed.data||parsed;
+        confirmarImportacao(importado);
+      } else {
+        const importado=parsearBackupTxt(conteudo);
+        confirmarImportacao(importado);
+      }
+    } catch(err){ alert('Erro ao ler o arquivo: '+err.message); }
+    input.value='';
+  };
+  reader.readAsText(file);
+}
+
+function parsearBackupTxt(txt){
+  var resultado={tarefas:[],audiencias:[],processos:[],demandas:[],delegacoes:[],oab:[],arquivo:[],lixeira:[]};
+  function getSecao(nome){ var partes=txt.split(new RegExp('---\\s*'+nome+'[^\n]*---')); if(partes.length<2) return ''; var depois=partes[1]; var fim=depois.search(/\n---\s*[A-Z]/); return fim>=0?depois.substring(0,fim):depois; }
+  function limpar(s){ return (s||'').trim().replace(/\u2014/g,'').trim(); }
+  getSecao('TAREFAS').split(/\n(?=\[\d+\])/).forEach(function(bloco){ bloco=bloco.trim(); if(!bloco) return; var eM=bloco.match(/\[([^\]]+)\]/); var aM=bloco.match(/\]\s*(.+)/); var pM=bloco.match(/Processo:\s*([^|\n]+)/); var asM=bloco.match(/Assunto:\s*([^|\n]+)/); var sM=bloco.match(/Situa[^:]+:\s*([^|\n]+)/); var prM=bloco.match(/Prioridade:\s*(\w+)/); if(!aM) return; resultado.tarefas.push({id:uid(),escritorio:mapEscritorio(eM?eM[1]:''),atividade:aM[1].trim(),processo:limpar(pM?pM[1]:''),assunto:limpar(asM?asM[1]:''),situacao:limpar(sM?sM[1]:'pendente'),prioridade:limpar(prM?prM[1]:'vermelho'),obs:'',anotacoes:[],historico:[]}); });
+  getSecao('PROCESSOS').split(/\n(?=\[\d+\])/).forEach(function(bloco){ bloco=bloco.trim(); if(!bloco) return; var eM=bloco.match(/\[([^\]]+)\]/); var nL=(bloco.match(/\]\s*(.+)/)||[])[1]||''; var xi=nL.indexOf(' x '); var cli=xi>=0?nL.substring(0,xi).trim():nL.trim(); var prt=xi>=0?nL.substring(xi+3).trim():''; var pM=bloco.match(/Processo:\s*([^|\n]+)/); var aM=bloco.match(/Assunto:\s*([^|\n]+)/); var sM=bloco.match(/Situa[^:]+:\s*([^\n]+)/); resultado.processos.push({id:uid(),escritorio:mapEscritorio(eM?eM[1]:''),cliente:cli,parte:prt,numero:limpar(pM?pM[1]:''),assunto:limpar(aM?aM[1]:''),situacao:limpar(sM?sM[1]:''),vara:'',obs:'',anotacoes:[],historico:[]}); });
+  // Restaura comentários do backup
+  const _secComs = getSecao('COMENTÁRIOS DASHBOARD') || getSecao('COMENTARIOS DASHBOARD');
+  if(_secComs && _secComs.trim()){
+    _secComs.split(/\n(?=\[\d+\])/).forEach(function(bloco){
+      bloco = bloco.trim();
+      if(!bloco) return;
+      const tsM = bloco.match(/\[([^\]]+)\]\s*\[id:([^\]]*)\]/);
+      const linhas = bloco.split('\n');
+      // texto é tudo depois da primeira linha
+      const texto = linhas.slice(1).join('\n').trim();
+      if(!texto) return;
+      const ts  = tsM ? tsM[1] : '';
+      const id  = tsM && tsM[2] ? tsM[2] : uid();
+      resultado._comentarios = resultado._comentarios || [];
+      resultado._comentarios.push({id, texto, ts});
+    });
+  }
+  getSecao('DELEGA').split(/\n(?=\[\d+\])/).forEach(function(bloco){ bloco=bloco.trim(); if(!bloco) return; var aM=bloco.match(/\]\s*(.+?)\s*\|/); var pM=bloco.match(/Processo:\s*([^|\n]+)/); var sM=bloco.match(/Situa[^:]+:\s*([^\n]+)/); resultado.delegacoes.push({id:uid(),atividade:limpar(aM?aM[1]:''),processo:limpar(pM?pM[1]:''),situacao:limpar(sM?sM[1]:''),prioridade:'vermelho',obs:'',anotacoes:[],historico:[]}); });
+  return resultado;
+}
+
+function mapEscritorio(label){
+  const m={'Escritório Principal':'principal','Escritório Pai':'pai','Escritório Mariana':'mariana','Escritório Jéssica':'jessica','Escritório André':'andre','Escritório Felipe':'felipe','Dativos':'dativa','Dativa':'dativa'};
+  return m[label.trim()]||label.trim().toLowerCase();
+}
+
+function confirmarImportacao(importado){
+  const totais=Object.entries(importado).filter(([k,v])=>Array.isArray(v)&&v.length>0).map(([k,v])=>`${k}: ${v.length}`).join(', ');
+  if(!confirm(`Restaurar backup?\n\nDados encontrados:\n${totais}\n\nATENÇÃO: os dados atuais serão substituídos.`)) return;
+  const abas=['tarefas','audiencias','processos','demandas','delegacoes','oab','arquivo','lixeira'];
+  abas.forEach(aba=>{ if(Array.isArray(importado[aba])) data[aba]=importado[aba]; });
+  // Restaura comentários do dashboard se presentes no backup
+  if(importado._comentarios && importado._comentarios.length > 0){
+    const _exist = getLembretes();
+    const _idsEx = new Set(_exist.map(c=>c.id));
+    const _novos = importado._comentarios.filter(c=>c.id&&!_idsEx.has(c.id));
+    const _todos = [..._exist,..._novos].sort((a,b)=>(b.ts||'').localeCompare(a.ts||''));
+    saveLembretesData(_todos);
+    renderComentarios();
+  }
+  saveData(); render();
+  clearTimeout(syncTimer);
+  flushSync().then(()=>{
+    if(localStorage.getItem(LS_KEY+'_pendingSync')){ alert('✅ Backup restaurado!\n\nDados locais salvos. Clique em "⚠ Dados não sincronizados" quando tiver conexão estável para enviar ao Sheets.'); }
+    else { alert('✅ Backup restaurado e sincronizado com o Sheets!'); }
+  });
+}
+
+// ============================================================
+GS_URL = localStorage.getItem(LS_KEY+'_gsurl') || 'https://script.google.com/macros/s/AKfycbxtcg8NzlIkgIIJKGF3lGQu7vAWFq39Plb7QoiHxf6WpGtCYnky4psVn6EGkFBhXn3XIQ/exec';
+loadLembretes();
+
+// MIGRAÇÃO ÚNICA — mescla comentários de todos os PCs na primeira abertura do novo HTML
+(function migrarComentariosSeed(){
+  const SEED_VERSION = 'com_seed_v1';
+  if(localStorage.getItem(LS_KEY+'_'+SEED_VERSION)) return; // já rodou
+  const seed = [{"id": "com_pc1_001", "texto": "nf diego", "ts": "09/04/2026 11:33"}, {"id": "com_pc1_002", "texto": "iniciar cumprimento ivonete", "ts": "09/04/2026 09:19"}, {"id": "com_pc1_003", "texto": "marcel 0004297-90.2004.8.16.0001", "ts": "08/04/2026 13:32 (editado)"}, {"id": "com_mac_001", "texto": "fazer orçamento momento. aprovado 2000 para contestacao", "ts": "04/04/2026 01:01 (editado)"}, {"id": "com_mac_002", "texto": "Processo Nilvo, ver prazo ref. a indicação de prova testemunhal", "ts": "03/04/2026 23:41"}, {"id": "com_mac_003", "texto": "nf edimar", "ts": "02/04/2026 22:19"}, {"id": "com_mac_004", "texto": "clamed pai", "ts": "31/03/2026 21:03"}, {"id": "com_pc1_004", "texto": "NF Edimar", "ts": "31/03/2026 10:37"}];
+  const existentes = getLembretes();
+  const idsExist = new Set(existentes.map(c=>c.id));
+  const novos = seed.filter(c=>!idsExist.has(c.id));
+  if(novos.length > 0){
+    const merged = [...existentes,...novos].sort((a,b)=>(b.ts||'').localeCompare(a.ts||''));
+    saveLembretesData(merged);
+  }
+  localStorage.setItem(LS_KEY+'_'+SEED_VERSION,'1');
+})();
+
+if(GS_URL){ loadFromSheets(); } else { data=loadData(); migrateData(); seedDados(); setStatus('Offline','offline'); render(); }
+
+(function verificaPendenciasIniciais(){
+  if(localStorage.getItem(LS_KEY+'_pendingSync')){
+    setTimeout(()=>{ const btn=document.getElementById('btn-sync-pending'); if(btn) btn.style.display=''; }, 500);
+  }
+})();
+
+(function verificarBackupAutomatico(){
+  const ultimoBackup=parseInt(localStorage.getItem(LS_KEY+'_ultimo_backup')||'0');
+  const umDia=24*60*60*1000;
+  if(Date.now()-ultimoBackup>umDia){
+    setTimeout(()=>{
+      const temDados=['tarefas','processos','audiencias'].some(a=>data[a]&&data[a].length>0);
+      if(!temDados) return;
+      exportBackup();
+      localStorage.setItem(LS_KEY+'_ultimo_backup', Date.now().toString());
+      console.log('Backup automático gerado.');
+    }, 10000);
+  }
+})();
+</script>
+</body>
+</html>
