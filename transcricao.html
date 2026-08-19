@@ -1,0 +1,297 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Transcrição de Audiência — CSCB Advogados</title>
+<style>
+  :root{
+    --bg:#f5f5f7; --surface:#ffffff; --surface-2:#fafafa;
+    --border:#e5e5ea; --text:#1d1d1f; --text-secondary:#6e6e73; --text-muted:#a1a1a6;
+    --accent:#0071e3; --accent-dark:#0058b0; --ok:#166534; --warn:#92400e; --danger:#dc2626;
+  }
+  *{margin:0;padding:0;box-sizing:border-box}
+  body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",system-ui,sans-serif;background:var(--bg);color:var(--text);line-height:1.5;-webkit-font-smoothing:antialiased}
+  .container{max-width:920px;margin:0 auto;padding:32px 20px 80px}
+  header{margin-bottom:24px}
+  h1{font-size:26px;font-weight:600;letter-spacing:-0.02em}
+  .subtitle{color:var(--text-secondary);font-size:14px;margin-top:6px;max-width:640px}
+  .card{background:var(--surface);border:0.5px solid var(--border);border-radius:16px;padding:22px;margin-bottom:18px}
+  .aviso{background:#fffbeb;border:0.5px solid #fde68a;border-radius:12px;padding:12px 16px;font-size:12.5px;color:var(--warn);margin-bottom:18px;line-height:1.5}
+  .aviso b{font-weight:600}
+  .dropzone{border:2px dashed var(--border);border-radius:16px;padding:48px 24px;text-align:center;cursor:pointer;transition:border-color .15s,background .15s;background:var(--surface-2)}
+  .dropzone:hover,.dropzone.drag{border-color:var(--accent);background:#f0f7ff}
+  .dropzone .emoji{font-size:40px;margin-bottom:12px}
+  .dropzone .titulo{font-size:15px;font-weight:500;margin-bottom:4px}
+  .dropzone .hint{font-size:12.5px;color:var(--text-muted)}
+  input[type=file]{display:none}
+  .btn{border:none;border-radius:10px;padding:9px 18px;font-size:13.5px;font-weight:500;cursor:pointer;transition:background .15s,opacity .15s;font-family:inherit}
+  .btn-primary{background:var(--accent);color:#fff}
+  .btn-primary:hover{background:var(--accent-dark)}
+  .btn-primary:disabled{opacity:0.5;cursor:not-allowed}
+  .btn-gray{background:#e8e8ed;color:var(--text)}
+  .btn-gray:hover{background:#dcdce1}
+  .arquivo-info{display:flex;align-items:center;gap:12px;font-size:13.5px;padding:12px 0}
+  .arquivo-info .nome{font-weight:500;flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .arquivo-info .tam{color:var(--text-muted);font-size:12px}
+  .modelo-sel{display:flex;gap:8px;align-items:center;margin:14px 0;flex-wrap:wrap}
+  .modelo-sel label{font-size:12.5px;color:var(--text-secondary)}
+  select{border:0.5px solid var(--border);border-radius:8px;padding:6px 10px;font-size:13px;font-family:inherit;background:#fff}
+  .progresso-wrap{margin-top:16px;display:none}
+  .progresso-bar{height:6px;background:#e8e8ed;border-radius:3px;overflow:hidden}
+  .progresso-fill{height:100%;background:var(--accent);width:0%;transition:width .3s}
+  .progresso-txt{font-size:12.5px;color:var(--text-secondary);margin-top:8px;text-align:center}
+  .resultado{display:none}
+  .resultado-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;flex-wrap:wrap;gap:10px}
+  .resultado-head h2{font-size:16px;font-weight:600}
+  .resultado-acoes{display:flex;gap:8px}
+  .toolbar{display:flex;gap:8px;align-items:center;margin-bottom:12px;flex-wrap:wrap}
+  .toggle{display:flex;background:#e8e8ed;border-radius:8px;padding:2px}
+  .toggle button{border:none;background:none;padding:5px 12px;font-size:12.5px;border-radius:6px;cursor:pointer;color:var(--text-secondary);font-family:inherit}
+  .toggle button.on{background:#fff;color:var(--text);font-weight:500}
+  #editor{width:100%;min-height:340px;border:0.5px solid var(--border);border-radius:12px;padding:16px;font-size:14px;line-height:1.7;font-family:inherit;resize:vertical;color:var(--text)}
+  #editor:focus{outline:none;border-color:var(--accent)}
+  .ts{color:var(--accent);font-weight:600;font-variant-numeric:tabular-nums}
+  .footer-note{font-size:11.5px;color:var(--text-muted);margin-top:10px;text-align:center}
+  .erro{background:#fef2f2;border:0.5px solid #fecaca;color:var(--danger);border-radius:12px;padding:12px 16px;font-size:13px;margin-top:14px;display:none}
+</style>
+</head>
+<body>
+<div class="container">
+  <header>
+    <h1>Transcrição de Audiência</h1>
+    <p class="subtitle">Arraste o vídeo ou áudio da audiência. A transcrição é feita inteiramente no seu navegador, com marcação de tempo, e o arquivo nunca sai do seu computador.</p>
+  </header>
+
+  <div class="aviso">
+    <b>Rascunho para revisão.</b> A transcrição automática é um ponto de partida, não um documento final. Áudio de audiência tem várias vozes, fala rápida e termos jurídicos, então espere corrigir bastante o texto. Confira sempre com o áudio original antes de usar. <b>Nada é enviado para servidores</b> — todo o processamento acontece na sua máquina.
+  </div>
+
+  <div class="card" id="card-upload">
+    <div class="dropzone" id="dropzone">
+      <div class="emoji">🎙️</div>
+      <div class="titulo">Arraste o arquivo aqui ou clique para escolher</div>
+      <div class="hint">Vídeo (.mp4, .mov, .webm) ou áudio (.mp3, .m4a, .wav, .ogg)</div>
+    </div>
+    <input type="file" id="fileInput" accept="video/*,audio/*,.mp4,.mov,.mp3,.m4a,.wav,.ogg,.webm">
+
+    <div id="arquivo-area" style="display:none">
+      <div class="arquivo-info">
+        <span style="font-size:22px">📄</span>
+        <span class="nome" id="arq-nome"></span>
+        <span class="tam" id="arq-tam"></span>
+        <button class="btn btn-gray" id="btn-trocar" style="font-size:12px;padding:6px 12px">Trocar</button>
+      </div>
+      <div class="modelo-sel">
+        <label>Qualidade do modelo:</label>
+        <select id="modelo">
+          <option value="Xenova/whisper-tiny">Rápido (menor precisão, ~40 MB)</option>
+          <option value="Xenova/whisper-base" selected>Equilibrado (recomendado, ~75 MB)</option>
+          <option value="Xenova/whisper-small">Alta precisão (lento, ~240 MB)</option>
+        </select>
+      </div>
+      <button class="btn btn-primary" id="btn-transcrever">Transcrever</button>
+
+      <div class="progresso-wrap" id="progresso">
+        <div class="progresso-bar"><div class="progresso-fill" id="prog-fill"></div></div>
+        <div class="progresso-txt" id="prog-txt">Preparando...</div>
+      </div>
+      <div class="erro" id="erro-box"></div>
+    </div>
+  </div>
+
+  <div class="card resultado" id="card-resultado">
+    <div class="resultado-head">
+      <h2>Transcrição</h2>
+      <div class="resultado-acoes">
+        <button class="btn btn-gray" id="btn-copiar">Copiar</button>
+        <button class="btn btn-gray" id="btn-baixar">Baixar .txt</button>
+      </div>
+    </div>
+    <div class="toolbar">
+      <div class="toggle">
+        <button id="tg-tempo" class="on">Com tempos</button>
+        <button id="tg-limpo">Só texto</button>
+      </div>
+      <span style="font-size:12px;color:var(--text-muted)" id="stats"></span>
+    </div>
+    <textarea id="editor" spellcheck="true" placeholder="A transcrição aparecerá aqui para você editar..."></textarea>
+    <div class="footer-note">Edite livremente. Os tempos [mm:ss] marcam quando cada trecho começa no áudio.</div>
+  </div>
+</div>
+
+<script type="module">
+import { pipeline, env } from 'https://cdn.jsdelivr.net/npm/@huggingface/transformers@3.6.1';
+env.allowLocalModels = false;
+
+let arquivo = null;
+let transcriber = null;
+let modeloCarregado = null;
+let chunksResultado = []; // {timestamp:[ini,fim], text}
+
+const $ = id => document.getElementById(id);
+const dropzone = $('dropzone'), fileInput = $('fileInput');
+
+// ---- Upload ----
+dropzone.addEventListener('click', ()=>fileInput.click());
+dropzone.addEventListener('dragover', e=>{e.preventDefault();dropzone.classList.add('drag');});
+dropzone.addEventListener('dragleave', ()=>dropzone.classList.remove('drag'));
+dropzone.addEventListener('drop', e=>{
+  e.preventDefault();dropzone.classList.remove('drag');
+  if(e.dataTransfer.files.length) selecionarArquivo(e.dataTransfer.files[0]);
+});
+fileInput.addEventListener('change', e=>{ if(e.target.files.length) selecionarArquivo(e.target.files[0]); });
+$('btn-trocar').addEventListener('click', ()=>{ fileInput.value=''; fileInput.click(); });
+
+function selecionarArquivo(f){
+  arquivo = f;
+  $('arq-nome').textContent = f.name;
+  $('arq-tam').textContent = (f.size/1024/1024).toFixed(1)+' MB';
+  dropzone.style.display='none';
+  $('arquivo-area').style.display='block';
+  $('erro-box').style.display='none';
+}
+
+// ---- Extrair áudio (decodifica e reamostra para 16kHz mono) ----
+async function extrairAudio(file){
+  const arrayBuffer = await file.arrayBuffer();
+  const AudioCtx = window.AudioContext || window.webkitAudioContext;
+  const ctx = new AudioCtx({ sampleRate: 16000 });
+  let decoded;
+  try {
+    decoded = await ctx.decodeAudioData(arrayBuffer);
+  } catch(e){
+    throw new Error('Não foi possível ler o áudio deste arquivo. Tente converter para .mp3 ou .wav.');
+  }
+  // Se estéreo, faz a média dos canais (mono)
+  let audio;
+  if(decoded.numberOfChannels === 2){
+    const c0 = decoded.getChannelData(0), c1 = decoded.getChannelData(1);
+    audio = new Float32Array(c0.length);
+    for(let i=0;i<c0.length;i++) audio[i] = (c0[i]+c1[i])/2;
+  } else {
+    audio = decoded.getChannelData(0);
+  }
+  return audio;
+}
+
+// ---- Transcrever ----
+$('btn-transcrever').addEventListener('click', async ()=>{
+  if(!arquivo) return;
+  const btn = $('btn-transcrever');
+  btn.disabled = true;
+  $('erro-box').style.display='none';
+  $('progresso').style.display='block';
+  setProg(2, 'Lendo o áudio do arquivo...');
+
+  try {
+    const audio = await extrairAudio(arquivo);
+    const dur = (audio.length/16000);
+    setProg(8, `Áudio lido (${Math.round(dur/60)} min). Carregando modelo...`);
+
+    const modeloId = $('modelo').value;
+    if(!transcriber || modeloCarregado !== modeloId){
+      transcriber = await pipeline('automatic-speech-recognition', modeloId, {
+        progress_callback: p=>{
+          if(p.status==='progress' && p.total){
+            const pct = 8 + Math.round((p.loaded/p.total)*32);
+            setProg(pct, `Baixando modelo... ${Math.round(p.loaded/1024/1024)} MB`);
+          } else if(p.status==='ready'){
+            setProg(42, 'Modelo pronto. Transcrevendo...');
+          }
+        }
+      });
+      modeloCarregado = modeloId;
+    }
+    setProg(45, 'Transcrevendo o áudio... isso pode levar vários minutos.');
+
+    const output = await transcriber(audio, {
+      language: 'portuguese',
+      task: 'transcribe',
+      return_timestamps: true,
+      chunk_length_s: 30,
+      stride_length_s: 5,
+      callback_function: x=>{
+        // progresso aproximado durante a transcrição
+        setProg(Math.min(95, 45), 'Transcrevendo... aguarde.');
+      }
+    });
+
+    chunksResultado = output.chunks || [{timestamp:[0,dur], text: output.text}];
+    setProg(100, 'Concluído.');
+    setTimeout(()=>{ $('progresso').style.display='none'; }, 600);
+    mostrarResultado();
+  } catch(e){
+    console.error(e);
+    $('progresso').style.display='none';
+    const box = $('erro-box');
+    box.style.display='block';
+    box.textContent = 'Erro: ' + (e.message || e) + ' — Se o problema persistir, tente um modelo mais rápido, um arquivo menor, ou converta para .mp3.';
+  } finally {
+    btn.disabled = false;
+  }
+});
+
+function setProg(pct, txt){
+  $('prog-fill').style.width = pct+'%';
+  if(txt) $('prog-txt').textContent = txt;
+}
+
+// ---- Resultado ----
+let modoTempo = true;
+function fmtTempo(seg){
+  seg = Math.max(0, Math.floor(seg||0));
+  const m = Math.floor(seg/60), s = seg%60;
+  const h = Math.floor(m/60);
+  if(h>0) return `${h}:${String(m%60).padStart(2,'0')}:${String(s).padStart(2,'0')}`;
+  return `${String(m).padStart(2,'0')}:${String(s).padStart(2,'0')}`;
+}
+function montarTexto(comTempo){
+  return chunksResultado.map(c=>{
+    const t = (c.text||'').trim();
+    if(!t) return '';
+    return comTempo ? `[${fmtTempo(c.timestamp[0])}] ${t}` : t;
+  }).filter(Boolean).join(comTempo ? '\n' : ' ');
+}
+function mostrarResultado(){
+  $('card-resultado').style.display='block';
+  $('editor').value = montarTexto(modoTempo);
+  atualizarStats();
+  $('card-resultado').scrollIntoView({behavior:'smooth', block:'start'});
+}
+function atualizarStats(){
+  const txt = $('editor').value;
+  const palavras = txt.trim().split(/\s+/).filter(Boolean).length;
+  $('stats').textContent = `${chunksResultado.length} trechos · ${palavras} palavras`;
+}
+$('editor').addEventListener('input', atualizarStats);
+
+$('tg-tempo').addEventListener('click', ()=>{
+  if(modoTempo) return;
+  modoTempo = true;
+  $('tg-tempo').classList.add('on'); $('tg-limpo').classList.remove('on');
+  $('editor').value = montarTexto(true); atualizarStats();
+});
+$('tg-limpo').addEventListener('click', ()=>{
+  if(!modoTempo) return;
+  modoTempo = false;
+  $('tg-limpo').classList.add('on'); $('tg-tempo').classList.remove('on');
+  $('editor').value = montarTexto(false); atualizarStats();
+});
+
+$('btn-copiar').addEventListener('click', ()=>{
+  navigator.clipboard.writeText($('editor').value).then(()=>{
+    const b=$('btn-copiar'); const o=b.textContent; b.textContent='Copiado!'; setTimeout(()=>b.textContent=o,1500);
+  });
+});
+$('btn-baixar').addEventListener('click', ()=>{
+  const blob = new Blob([$('editor').value], {type:'text/plain;charset=utf-8'});
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  const nome = (arquivo?.name||'transcricao').replace(/\.[^.]+$/,'');
+  a.href=url; a.download = 'transcricao_'+nome+'.txt';
+  a.click(); URL.revokeObjectURL(url);
+});
+</script>
+</body>
+</html>
